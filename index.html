@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geografías del silencio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Libre+Franklin:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tinta:#141414;
+    --papel:#f3f1ec;
+    --amarillo:#FFD100;
+    --negro:#0b0b0b;
+    --sans:"Libre Franklin",system-ui,sans-serif;
+    --serif:"Instrument Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--negro);color:var(--tinta);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
+  /* ---------- Barra superior ---------- */
+  .barra{position:fixed;inset:0 0 auto 0;z-index:50;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 16px;pointer-events:none;transition:color .4s}
+  .barra > *{pointer-events:auto}
+  .barra.oscura{color:#fff}
+
+  .menu{justify-self:start;position:relative}
+  .menu-boton{display:flex;align-items:center;gap:28px;background:var(--papel);color:var(--tinta);border:1px solid rgba(0,0,0,.12);border-radius:4px;padding:10px 16px;font:600 14px var(--sans);letter-spacing:.02em;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .menu-boton svg{transition:transform .25s}
+  .menu.abierto .menu-boton svg{transform:rotate(180deg)}
+  .menu-lista{position:absolute;top:calc(100% + 6px);left:0;min-width:240px;background:var(--papel);border:1px solid rgba(0,0,0,.12);border-radius:4px;list-style:none;padding:6px 0;box-shadow:0 8px 24px rgba(0,0,0,.15);opacity:0;transform:translateY(-4px);visibility:hidden;transition:.2s}
+  .menu.abierto .menu-lista{opacity:1;transform:none;visibility:visible}
+  .menu-lista a{display:flex;justify-content:space-between;gap:12px;padding:9px 16px;color:var(--tinta);text-decoration:none;font-size:14px}
+  .menu-lista a:hover{background:rgba(0,0,0,.06)}
+  .menu-lista a.activo{font-weight:700}
+  .menu-lista small{color:#8a8a8a;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+
+  .logo{justify-self:center;display:block;width:58px;height:58px}
+  .logo img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.18))}
+
+  .sonido{justify-self:end;width:42px;height:42px;border-radius:50%;border:0;background:var(--tinta);color:#fff;display:grid;place-items:center;cursor:pointer;transition:background .3s,transform .2s}
+  .sonido:hover{transform:scale(1.06)}
+  .sonido.activo{background:var(--amarillo);color:var(--tinta)}
+  .barra.oscura .sonido:not(.activo){background:#f3f1ec;color:var(--tinta)}
+  .sonido .on{display:none}
+  .sonido.activo .on{display:block}
+  .sonido.activo .off{display:none}
+
+  /* ---------- Portada + efecto televisor ---------- */
+  .portada{position:relative;height:520vh}
+  .escenario{position:sticky;top:0;height:100vh;overflow:hidden;background:var(--negro)}
+  .pantalla{position:absolute;inset:0;background:var(--papel);transform-origin:50% 50%;will-change:transform,filter}
+  .pantalla video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.05)}
+  .pantalla .velo{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(243,241,236,.72) 0%,rgba(243,241,236,.86) 70%,rgba(243,241,236,.93) 100%)}
+
+  .cinta{position:absolute;top:50%;left:0;width:100%;transform:translateY(-50%);overflow:hidden;white-space:nowrap}
+  .cinta-pista{display:inline-flex;animation:deslizar 28s linear infinite}
+  .cinta-pista span{font:italic 400 clamp(56px,10vw,140px)/1.1 var(--serif);color:var(--tinta);padding-right:.6em;letter-spacing:-.01em}
+  .cinta-pista em{font-style:italic;background:linear-gradient(transparent 62%,var(--amarillo) 62%,var(--amarillo) 90%,transparent 90%)}
+  @keyframes deslizar{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  .firma{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:13px;letter-spacing:.04em;color:#3a3a3a}
+  .firma strong{display:block;font:italic 400 clamp(22px,2.6vw,30px)/1.2 var(--serif);letter-spacing:0;color:var(--tinta);margin-bottom:6px}
+  .desliza{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#555}
+  .desliza svg{animation:rebote 1.8s ease-in-out infinite}
+  @keyframes rebote{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  .credito{position:absolute;right:14px;bottom:10px;font-size:10px;color:#6b6b6b;max-width:46ch;text-align:right}
+
+  /* punto final del televisor */
+  .punto{position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 18px 6px rgba(255,255,255,.8);opacity:0;pointer-events:none}
+  .estatica{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen;background:repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 1px,transparent 1px 3px)}
+
+
+  /* ---------- Página 2 · Resumen ---------- */
+  .pantalla2{position:absolute;inset:0;background:#ebe9e4;transform-origin:50% 50%;will-change:transform,filter;transform:scale(0,0.004);opacity:0}
+  .pantalla2 .mosaico{position:absolute;inset:-4%;background:url(assets/mosaico.jpg) center/cover;filter:grayscale(1);animation:derivar 90s linear infinite alternate}
+  .pantalla2 .velo2{position:absolute;inset:0;background:rgba(240,238,233,.74)}
+  @keyframes derivar{from{transform:translate(0,0)}to{transform:translate(-3%,-2%)}}
+
+  .clip{position:absolute;width:min(25vw,340px);opacity:0;transform:translateY(18px);transition:opacity .5s,transform .5s}
+  .clip.visible{opacity:1;transform:none}
+  .clip .marco{border:4px solid #1b1b1b;background:#000;box-shadow:0 6px 18px rgba(0,0,0,.22);aspect-ratio:16/9}
+  .clip.destacado .marco{border-color:var(--amarillo);box-shadow:0 0 0 2px #1b1b1b,0 6px 18px rgba(0,0,0,.25)}
+  .clip video{display:block;width:100%;height:100%;object-fit:cover}
+  .clip figcaption{display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:#1b1b1b;color:#fff;font:600 11px var(--sans);letter-spacing:.03em;padding:5px 9px;border-radius:3px}
+  .clip.destacado figcaption{background:var(--amarillo);color:#1b1b1b}
+  .c1{left:1.5%;top:14%}
+  .c2{left:1.5%;top:50%}
+  .c3{right:1.5%;top:28%}
+  .c4{right:1.5%;top:62%}
+
+  .tarjeta{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);width:min(36vw,470px);background:#fffdf8;border:1px solid rgba(0,0,0,.12);border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:26px 28px;font:400 clamp(16px,1.35vw,19px)/1.55 Georgia,"Times New Roman",serif;color:#1b1b1b;opacity:0;transition:opacity .6s}
+  .tarjeta.visible{opacity:1}
+  .tarjeta .resalte{font-weight:700;background:linear-gradient(transparent 60%,var(--amarillo) 60%,var(--amarillo) 92%,transparent 92%)}
+  .tarjeta .ico{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;border:2px solid #1b1b1b;background:var(--amarillo);vertical-align:-5px;margin:0 2px}
+  .tarjeta .ico svg{width:13px;height:13px}
+  .credito2{position:absolute;right:14px;bottom:10px;font-size:10px;color:#6b6b6b;max-width:60ch;text-align:right;opacity:0;transition:opacity .6s}
+  .credito2.visible{opacity:1}
+
+  @media (max-width:760px){
+    .clip{width:42vw}
+    .c1{left:4%;top:11%} .c2{right:4%;left:auto;top:11%}
+    .c3{left:4%;right:auto;top:auto;bottom:6%} .c4{right:4%;top:auto;bottom:6%}
+    .clip figcaption{font-size:9px}
+    .tarjeta{width:88vw;padding:16px 18px;font-size:14.5px;top:50%}
+    .credito2{display:none}
+  }
+
+
+  /* ---------- Página 3 · Noticias ---------- */
+  .noticias{position:relative;height:320vh;background:#f6f4ef}
+  .noticias .escenario3{position:sticky;top:0;height:100vh;overflow:hidden;background:#f6f4ef}
+  .muro{position:absolute;inset:-20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:22px 26px;padding:60px 20px;opacity:.55;pointer-events:none}
+  .muro div{font:400 12.5px/1.35 Georgia,serif;color:#9c9a95}
+  .muro b{display:block;font:700 9.5px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#d6a2a2;margin-bottom:4px}
+  .muro i{font-style:normal;font-weight:700;color:#8d8b86}
+
+  .nota{position:absolute;width:min(27vw,330px);background:#fff;border:2px solid #1b1b1b;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.14);padding:14px 16px 12px;opacity:0;transform:translateY(16px) scale(.98);transition:opacity .5s,transform .5s}
+  .nota.visible{opacity:1;transform:none}
+  .nota .medio{display:flex;align-items:center;gap:8px;font:700 12px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:#b3261e;padding-bottom:8px;border-bottom:2px solid #b3261e;margin-bottom:10px}
+  .nota .medio span{display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 4px;background:#1b1b1b;color:#fff;font-size:9px;letter-spacing:.02em;border-radius:2px}
+  .nota h3{font:italic 700 clamp(15px,1.25vw,18px)/1.38 Georgia,serif;color:#1b1b1b}
+  .nota h3 mark{background:linear-gradient(transparent 12%,#ffe66b 12%,#ffe66b 92%,transparent 92%);color:inherit;padding:0 1px}
+  .nota p.bajada{font:400 13px/1.45 Georgia,serif;color:#444;margin-top:8px}
+  .nota .fecha{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font:400 12px var(--sans);color:#777}
+  .nota .fecha a{color:#777}
+  .nota .etiqueta{font:700 10px var(--sans);letter-spacing:.06em;text-transform:uppercase;background:var(--amarillo);color:#1b1b1b;padding:2px 6px;border-radius:2px}
+  .nota.recorte{padding:8px 8px 10px;width:min(26vw,340px)}
+  .nota.recorte img{display:block;width:100%;height:auto;max-height:42vh;object-fit:cover;object-position:top;border:1px solid #ddd}
+  .nota.recorte figcaption{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font:600 11.5px var(--sans);color:#555}
+  .nota.atenuada{opacity:.5;filter:grayscale(1)}
+  .n1{left:2%;top:11%} .n2{left:2%;top:52%} .n3{right:2%;top:16%}
+  .n4{left:6%;top:24%;--rot:-2deg} .n5{right:5%;top:44%;--rot:2deg}
+  .n4.visible,.n5.visible{transform:rotate(var(--rot));z-index:3}
+
+  .relato{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(36vw,460px);background:#fffdf8;border:1px solid rgba(0,0,0,.14);border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:22px 26px;font:400 clamp(16px,1.35vw,19px)/1.55 Georgia,serif;color:#1b1b1b}
+  .relato{display:grid}
+  .relato .paso{grid-area:1/1;transition:opacity .45s}
+  .relato .paso.oculto{opacity:0}
+  .relato strong{background:linear-gradient(transparent 60%,var(--amarillo) 60%,var(--amarillo) 92%,transparent 92%)}
+
+  @media (max-width:760px){
+    .noticias{height:auto}
+    .noticias .escenario3{position:relative;height:auto;padding:90px 16px 40px;display:flex;flex-direction:column;gap:14px}
+    .muro{display:none}
+    .nota,.relato{position:relative;left:auto;right:auto;top:auto;transform:none;width:100%;opacity:1}
+    .relato{display:block}
+    .relato .paso + .paso{margin-top:12px}
+    .relato .paso.oculto{opacity:1}
+    .nota.recorte{width:100%}
+    .n4.visible,.n5.visible{transform:none}
+    .nota.atenuada{opacity:1}
+    .relato{order:0} .n1{order:1} .n2{order:2} .n3{order:3} .n4{order:4} .n5{order:5}
+  }
+
+
+  /* ---------- Páginas 4+ · La historia de Flourish ---------- */
+  .historia{position:relative;background:#0b0b0b}
+  .historia .escenario4{position:sticky;top:0;height:100vh;overflow:hidden;background:#0b0b0b}
+  #mapa,#disp{position:absolute;left:0;top:0;width:100%;height:100%}
+  #disp{opacity:0;transition:opacity .6s;pointer-events:none}
+  #disp.on{opacity:1;pointer-events:auto}
+  #mapa{transition:opacity .6s}
+  #mapa .mun{stroke:#3a3a3a;stroke-width:.8;vector-effect:non-scaling-stroke}
+  #mapa .mun:hover{stroke:#fff;stroke-width:1.6}
+  .etq{font:700 13px var(--sans);fill:#fff;paint-order:stroke;stroke:#000;stroke-width:3px}
+  #disp text{font:12px var(--sans);fill:#bbb}
+  #disp .eje path,#disp .eje line{stroke:#555}
+  #disp .titulo-eje{font:700 13px var(--sans);fill:#ddd}
+  #disp .mediana line{stroke:#FFD100;stroke-dasharray:4 4;opacity:.7}
+  #disp .mediana text{fill:#FFD100;font:600 11px var(--sans)}
+  .leyenda{position:absolute;right:max(20px,calc(50% - 600px));bottom:22px;z-index:3;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px 14px;max-width:560px;font:400 12.5px var(--sans);color:#ddd;background:rgba(11,11,11,.82);padding:8px 12px;border-radius:4px;opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+  .leyenda.on{opacity:1;transform:none}
+  .leyenda span{display:inline-flex;align-items:center;gap:6px}
+  .leyenda i{display:inline-block;width:11px;height:13px;border-radius:2px;border:1px solid #444}
+  .leyenda i.c{width:11px;height:11px;border-radius:50%}
+  .leyenda .grad{width:120px;height:10px;border-radius:2px;background:linear-gradient(90deg,#1c1c1c,#FFD100)}
+
+  .pasos{position:relative;z-index:5;margin-top:-100vh;pointer-events:none}
+  .paso-h{height:100vh;display:flex;align-items:center;padding:0 max(20px,calc(50% - 600px))}
+  .tarj{pointer-events:auto;width:min(380px,90vw);background:rgba(16,16,16,.86);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid #2e2e2e;border-left:4px solid var(--amarillo);border-radius:4px;padding:20px 22px;color:#e9e6df;font:400 clamp(15px,1.15vw,17px)/1.55 "Libre Franklin",sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);opacity:.25;transform:translateY(24px);transition:opacity .5s,transform .6s cubic-bezier(.2,.7,.2,1)}
+  .tarj.activa{opacity:1;transform:none}
+  .tarj.ancha{width:min(560px,92vw)}
+  .tarj b{color:#fff}
+  .tarj .kicker{display:block;font:700 10.5px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--amarillo);margin-bottom:8px}
+  .tarj h4{font:700 15px var(--sans);color:#fff;margin:14px 0 4px}
+  .tarj h4:first-of-type{margin-top:4px}
+  .tarj p{margin:0 0 .7em}
+  .tarj p:last-child{margin-bottom:0}
+  .tarj mark{background:none;color:var(--amarillo);font-weight:700}
+
+  .tip{position:absolute;z-index:6;pointer-events:none;background:#fff;color:#141414;border-radius:3px;box-shadow:0 4px 14px rgba(0,0,0,.35);font:12px/1.4 var(--sans);min-width:170px;opacity:0;transition:opacity .15s}
+  .tip.on{opacity:1}
+  .tip h5{margin:0;padding:6px 10px;background:#2b2b2b;color:#fff;font:700 13px var(--sans)}
+  .tip div{display:flex;justify-content:space-between;gap:16px;padding:3px 10px;border-top:1px solid #eee}
+  .tip div:first-of-type{border-top:0}
+  .tip div span:last-child{font-weight:600;text-align:right}
+  .qr{position:absolute;right:max(20px,calc(50% - 600px));bottom:64px;z-index:3;display:flex;align-items:center;gap:12px;background:#fff;color:#141414;text-decoration:none;padding:10px 14px 10px 10px;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.4);font:600 13px/1.3 var(--sans);max-width:300px;opacity:0;transform:translateY(10px);transition:opacity .6s .6s,transform .6s .6s;pointer-events:none}
+  .qr.on{opacity:1;transform:none;pointer-events:auto}
+  .qr img{width:110px;height:110px}
+
+  .minimapa{margin:-4px 0 14px;padding:0 0 12px;border-bottom:1px solid #2e2e2e}
+  .minimapa svg{display:block;width:100%;height:170px}
+  .minimapa figcaption{font:400 12px/1.4 var(--sans);color:#bdbab3;margin-top:6px}
+  .minimapa figcaption b{color:var(--amarillo)}
+  .minimapa .vec{fill:#242424;stroke:#4a4a4a;stroke-width:.7}
+  .minimapa .ctg{fill:#3a3a3a}
+  .minimapa .sr{fill:#F2EEE6;stroke:#FFD100;stroke-width:2}
+  .minimapa text{font:600 10.5px var(--sans);fill:#aaa}
+  .minimapa text.n{fill:#FFD100;font-weight:700;font-size:12px;paint-order:stroke;stroke:#101010;stroke-width:3px}
+  #disp .anot-sr text{font:600 12px var(--sans);fill:#FFD100}
+  #disp .anot-sr line{stroke:#FFD100;stroke-width:1.2}
+  #disp .pulso-sr{fill:none;stroke:#FFD100;stroke-width:2;animation:pulso 1.8s ease-out infinite}
+  @keyframes pulso{0%{r:6;opacity:.9}100%{r:34;opacity:0}}
+  .pulso{fill:none;stroke:#FFD100;stroke-width:2;animation:pulso 1.8s ease-out infinite;vector-effect:non-scaling-stroke}
+
+  @media (max-width:760px){
+    .paso-h{align-items:flex-end;padding:0 4vw 5vh}
+    .minimapa svg{height:100px}
+    .minimapa{margin-bottom:10px;padding-bottom:8px}
+    .tarj,.tarj.ancha{width:92vw;font-size:14.5px;padding:16px 18px}
+    .leyenda{left:12px;right:12px;bottom:auto;top:70px;justify-content:flex-start;font-size:11px;max-width:none}
+    .qr{left:12px;right:12px;bottom:auto;top:110px;max-width:none}
+    .qr img{width:80px;height:80px}
+  }
+
+
+  /* ---------- Transiciones: anochecer y amanecer ---------- */
+  .degrade{position:relative;height:110vh;pointer-events:none;overflow:hidden}
+  .degrade.a-oscuro{background:linear-gradient(180deg,#f6f4ef 0%,#f4e6c4 14%,#efc98b 28%,#e39a5b 42%,#b4583f 55%,#6e3448 68%,#2e2340 80%,#141322 91%,#0b0b0b 100%)}
+  .degrade.a-claro{background:linear-gradient(180deg,#0b0b0b 0%,#141322 9%,#2e2340 20%,#6e3448 32%,#b4583f 45%,#e39a5b 58%,#efc98b 72%,#f4e6c4 86%,#f6f4ef 100%)}
+  .degrade.corto{height:55vh}
+  .degrade .estrellas{position:absolute;left:0;right:0;height:45%;opacity:0;transition:opacity 1.2s;background-image:
+    radial-gradient(1.2px 1.2px at 8% 30%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 17% 72%,#fff 50%,transparent 51%),
+    radial-gradient(1.4px 1.4px at 26% 45%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 37% 18%,#fff 50%,transparent 51%),
+    radial-gradient(1.2px 1.2px at 48% 60%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 57% 28%,#fff 50%,transparent 51%),
+    radial-gradient(1.5px 1.5px at 66% 80%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 74% 40%,#fff 50%,transparent 51%),
+    radial-gradient(1.2px 1.2px at 83% 15%,#fff 50%,transparent 51%),radial-gradient(1px 1px at 91% 65%,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 12% 88%,#fff 50%,transparent 51%),radial-gradient(1.3px 1.3px at 44% 92%,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 62% 8%,#fff 50%,transparent 51%),radial-gradient(1.2px 1.2px at 96% 35%,#fff 50%,transparent 51%)}
+  .degrade.a-oscuro .estrellas{bottom:0}
+  .degrade.a-claro .estrellas{top:0}
+  .degrade.visible .estrellas{opacity:.75}
+  .degrade .astro{position:absolute;left:50%;width:120px;height:120px;margin-left:-60px;border-radius:50%;background:radial-gradient(circle,#fff6d6 0%,#ffd98a 45%,rgba(255,190,90,0) 70%);filter:blur(1px)}
+  .degrade.a-oscuro .astro{top:30%}
+  .degrade.a-claro .astro{bottom:30%}
+
+  /* ---------- Sobre el autor ---------- */
+  .autor{background:#f6f4ef;color:#1b1b1b;padding:70px max(24px,calc(50% - 470px)) 70px}
+  .autor .rotulo{font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#8a8a8a;margin:0 0 10px}
+  .autor h3{font:italic 400 clamp(32px,4vw,48px)/1.1 var(--serif);margin:0 0 8px}
+  .autor .bio-corta{font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#b3261e;margin:0 0 22px}
+  .trabajos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+  .trabajo{display:block;background:#fff;border:2px solid #1b1b1b;border-radius:4px;padding:18px 20px;text-decoration:none;color:inherit;box-shadow:0 4px 14px rgba(0,0,0,.08);transition:transform .2s,box-shadow .2s}
+  a.trabajo:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.14)}
+  .trabajo .medio{font:700 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#b3261e;border-bottom:2px solid #b3261e;padding-bottom:8px;margin-bottom:10px}
+  .trabajo h5{font:italic 700 20px/1.3 Georgia,serif;margin:0 0 8px}
+  .trabajo p{font:400 14px/1.5 var(--sans);color:#444;margin:0 0 10px}
+  .trabajo .ir{font:600 13px var(--sans);color:#1b1b1b;background:linear-gradient(transparent 60%,var(--amarillo) 60%)}
+  .trabajo.pendiente{border-style:dashed;border-color:#aaa;box-shadow:none;color:#888}
+  .trabajo.pendiente .medio{color:#999;border-color:#ccc}
+
+  /* ---------- Fuentes y créditos ---------- */
+  .fuentes{background:#0b0b0b;color:#9a9a9a;padding:40px max(24px,calc(50% - 470px)) 80px;font:13px/1.6 var(--sans)}
+  .fuentes h4{color:#ddd;font:700 12px var(--sans);letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px}
+  .fuentes p{margin:0 0 8px;max-width:900px}
+
+  /* ---------- (provisional) ---------- */
+  .pagina{min-height:100vh;background:var(--negro);color:#eee;display:grid;place-items:center;text-align:center;padding:120px 24px}
+  .pagina p{font:italic 400 clamp(26px,3.4vw,44px)/1.2 var(--serif);color:#bdbdbd}
+  .pagina small{display:block;margin-top:14px;font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#666}
+
+  @media (max-width:640px){
+    .menu-boton{gap:8px;padding:8px 10px;font-size:12px}
+    .logo{width:46px;height:46px}
+    .firma{bottom:78px;padding:0 20px}
+    .credito{left:14px;right:14px;text-align:center;max-width:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cinta-pista{animation:none}
+    .cinta{white-space:normal;padding:0 24px}
+    .cinta-pista span:nth-child(2){display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="barra" id="barra">
+  <nav class="menu" id="menu">
+    <button class="menu-boton" id="menuBoton" aria-expanded="false" aria-controls="menuLista">
+      <span id="menuActual">Introducción</span>
+      <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    </button>
+    <ul class="menu-lista" id="menuLista">
+      <li><a href="#introduccion" data-p="0" class="activo">Introducción</a></li>
+      <li><a href="#introduccion" data-p="0.86">El proyecto en corto</a></li>
+      <li><a href="#noticias">Lo que dicen las noticias</a></li>
+      <li><a href="#historia" data-paso="s2">Todo empezó en San Jacinto</a></li>
+      <li><a href="#historia" data-paso="s3">El mapa del silencio</a></li>
+      <li><a href="#historia" data-paso="s5">El Dique</a></li>
+      <li><a href="#historia" data-paso="s6">La pregunta</a></li>
+      <li><a href="#historia" data-paso="s7">Cómo lo haremos</a></li>
+      <li><a href="#historia" data-paso="s10">Cuatro Bolívar en uno</a></li>
+      <li><a href="#historia" data-paso="s12">Lo que falta por encender</a></li>
+      <li><a href="#autor">Sobre el autor</a></li>
+    </ul>
+  </nav>
+
+  <a class="logo" href="#introduccion" aria-label="Universidad Santo Tomás">
+    <img src="assets/logo-usta.png" alt="Universidad Santo Tomás">
+  </a>
+
+  <button class="sonido" id="sonido" aria-pressed="false" aria-label="Activar música">
+    <svg class="off" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <svg class="on" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</header>
+
+<audio id="cancion" src="assets/cancion.mp3" loop preload="none"></audio>
+
+<!-- ================= PÁGINA 1 · PORTADA ================= -->
+<section class="portada" id="introduccion">
+  <div class="escenario">
+    <div class="pantalla" id="pantalla">
+      <video autoplay muted loop playsinline poster="assets/dique-poster.jpg">
+        <source src="assets/dique.mp4" type="video/mp4">
+      </video>
+      <div class="velo"></div>
+
+      <div class="cinta" aria-label="Geografías del silencio y la resistencia digital">
+        <div class="cinta-pista" aria-hidden="true">
+          <span>Geografías del <em>silencio</em> y la resistencia digital ·</span>
+          <span>Geografías del <em>silencio</em> y la resistencia digital ·</span>
+        </div>
+      </div>
+
+      <div class="firma">
+        Juan José Tous Ortega · Maestría en Comunicación, Culturas Digitales y Visualización de Datos
+      </div>
+
+      <div class="desliza" aria-hidden="true">
+        Desliza
+        <svg width="14" height="18" viewBox="0 0 14 18"><path d="M7 1v15M1 10l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      </div>
+
+      <p class="credito">Video: Canal del Dique en su desembocadura a la bahía de Cartagena. Dron: Jorge Escobar y Patricio Winckler (2025).</p>
+    </div>
+    <!-- ================= PÁGINA 2 · RESUMEN ================= -->
+    <div class="pantalla2" id="pantalla2">
+      <div class="mosaico"></div>
+      <div class="velo2"></div>
+      <figure class="clip c1">
+        <div class="marco"><video muted loop playsinline preload="none" poster="assets/simiti.jpg"><source src="assets/simiti.mp4" type="video/mp4"></video></div>
+        <figcaption><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-13a7 7 0 10-14 0c0 5.4 7 13 7 13z" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg> Simití · sur de Bolívar</figcaption>
+      </figure>
+      <figure class="clip c2">
+        <div class="marco"><video muted loop playsinline preload="none" poster="assets/morales.jpg"><source src="assets/morales.mp4" type="video/mp4"></video></div>
+        <figcaption><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-13a7 7 0 10-14 0c0 5.4 7 13 7 13z" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg> Morales · sur de Bolívar</figcaption>
+      </figure>
+      <figure class="clip c3 destacado">
+        <div class="marco"><video muted loop playsinline preload="none" poster="assets/turbaco.jpg"><source src="assets/turbaco.mp4" type="video/mp4"></video></div>
+        <figcaption><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-13a7 7 0 10-14 0c0 5.4 7 13 7 13z" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg> Turbaco · ZODES Dique</figcaption>
+      </figure>
+      <figure class="clip c4">
+        <div class="marco"><video muted loop playsinline preload="none" poster="assets/mompox.jpg"><source src="assets/mompox.mp4" type="video/mp4"></video></div>
+        <figcaption><svg width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.6 7-13a7 7 0 10-14 0c0 5.4 7 13 7 13z" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg> Mompox · Depresión Momposina</figcaption>
+      </figure>
+      <div class="tarjeta" id="tarjeta">
+        En varios municipios de Bolívar coinciden dos ausencias: casi no hay internet y no hay medios que cuenten lo que pasa. A esa doble ausencia la llamo <span class="resalte">geografías del silencio</span>. En la ZODES Dique, al lado de Cartagena, ocho de trece municipios no tienen ninguna emisora registrada, aunque en los datos casi todos aparecen conectados. Este proyecto se pregunta cómo se informa la gente allí —por la emisora, el perifoneo, el voz a voz o WhatsApp— y propone un atlas web, hecho con las comunidades, que ponga en un mismo mapa lo que dicen los datos y lo que viven los pueblos.
+      </div>
+      <p class="credito2" id="credito2">Videos de Simití, Morales, Turbaco y Mompox: créditos por confirmar.</p>
+    </div>
+    <div class="estatica" id="estatica"></div>
+    <div class="punto" id="punto"></div>
+  </div>
+</section>
+
+<!-- ================= PÁGINA 3 · NOTICIAS ================= -->
+<section class="noticias" id="noticias">
+  <div class="escenario3">
+    <div class="muro" id="muro" aria-hidden="true"></div>
+
+    <figure class="nota recorte n1" data-paso="1">
+      <img src="assets/nota-colmena.jpg" alt="Titular: Bolívar inaugura su primera Colmena Digital en Mompox y lleva educación tecnológica de vanguardia a zonas rurales" loading="lazy">
+      <figcaption>Gobernación de Bolívar · enero de 2026</figcaption>
+    </figure>
+    <figure class="nota recorte n2" data-paso="1">
+      <img src="assets/nota-innovatic.jpg" alt="Titular: Gobernación de Bolívar entregó 296 computadores a escuelas InnovaTIC" loading="lazy">
+      <figcaption>Gobernación de Bolívar · InnovaTIC 2019</figcaption>
+    </figure>
+    <figure class="nota recorte n3" data-paso="1">
+      <img src="assets/nota-mintic.jpg" alt="Titular: Ministerio TIC fortalece la educación digital en Bolívar con entrega de computadores e inversión de más de $159.340 millones" loading="lazy">
+      <figcaption>Ministerio TIC · julio de 2026</figcaption>
+    </figure>
+    <figure class="nota recorte n4" data-paso="2">
+      <img src="assets/nota-gob-clemencia.jpg" alt="Titular: Gobernador Yamil Arana y MinTIC entregan en Clemencia 52 computadores y 40 becas en Inteligencia Artificial" loading="lazy">
+      <figcaption>Gobernación de Bolívar · julio de 2026 · <span class="etiqueta">Clemencia · ZODES Dique</span></figcaption>
+    </figure>
+    <figure class="nota recorte n5" data-paso="2">
+      <img src="assets/nota-polideportivo.jpg" alt="Titular: MinTIC y Gobernación de Bolívar entregan computadores y becas para estudiantes rurales en Clemencia" loading="lazy">
+      <figcaption>El Polideportivo · julio de 2026 · <span class="etiqueta">Clemencia · ZODES Dique</span></figcaption>
+    </figure>
+    <div class="relato" id="relato">
+      <p class="paso" id="paso1">Un anuncio tras otro le dice a Bolívar que se está conectando: <strong>colmenas digitales</strong>, computadores para las escuelas, millones de pesos en inversión.</p>
+      <p class="paso oculto" id="paso2">La misma entrega de computadores en <strong>Clemencia</strong> salió en tres medios distintos. Pero en Clemencia hay apenas 5,7 accesos a internet fijo por cada 100 habitantes. La pregunta que queda: ¿hay conexión para usarlos?</p>
+    </div>
+  </div>
+</section>
+
+<div class="degrade a-oscuro" aria-hidden="true"><div class="astro"></div><div class="estrellas"></div></div>
+
+<!-- ================= PÁGINAS 4 A 15 · LA HISTORIA (FLOURISH) ================= -->
+<section class="historia" id="historia">
+  <div class="escenario4" id="escenario4">
+    <svg id="mapa" role="img" aria-label="Mapa de los municipios de Bolívar"></svg>
+    <svg id="disp" role="img" aria-label="Gráfico de dispersión: accesos a internet y emisoras por municipio"></svg>
+    <div class="leyenda" id="leyenda"></div>
+    <a class="qr" id="qr" href="https://public.flourish.studio/story/3860936/">
+      <img src="assets/qr-flourish.png" alt="Código QR de la historia en Flourish">
+      <span>Escanea para ver la historia interactiva en Flourish</span>
+    </a>
+    <div class="tip" id="tip"></div>
+  </div>
+  <div class="pasos" id="pasos">
+    <div class="paso-h" id="s2"><div class="tarj "><span class="kicker">Todo empezó aquí · 4/15</span><b>Todo empezó en San Jacinto.</b> Intenté entrar a una plataforma oficial y no había señal, pero la emisora comunitaria seguía transmitiendo. Ese día fue el único canal que funcionó.</div></div>
+    <div class="paso-h" id="s3"><div class="tarj "><span class="kicker">El mapa del silencio · 5/15</span>En 2023, Cartagena tenía cerca de <mark>19 accesos</mark> a internet fijo por cada 100 habitantes; San Jacinto del Cauca, en La Mojana, <mark>no llegaba ni a uno</mark>. El promedio departamental esconde estas diferencias.</div></div>
+    <div class="paso-h" id="s4"><div class="tarj "><span class="kicker">La doble exclusión · 6/15</span><mark>21 de los 46 municipios</mark> no tienen ninguna emisora con sede en su territorio. Donde coinciden la falta de conexión y de medios propios están las geografías del silencio: los municipios que quedan a oscuras (según la mediana de Bolívar en 2023).</div></div>
+    <div class="paso-h" id="s5"><div class="tarj "><span class="kicker">La ZODES Dique · 7/15</span>Trece municipios al lado de Cartagena. Reciben su señal y sus decisiones, pero <mark>ocho de ellos</mark> no tienen ninguna emisora registrada que cuente lo que pasa allí.</div></div>
+    <div class="paso-h" id="s6"><div class="tarj ancha"><span class="kicker">La pregunta · 8/15</span><b>¿Cómo se comunican e informan,</b> a través de prácticas de comunicación comunitaria, las poblaciones de la ZODES Dique (Bolívar) que enfrentan desigualdad conectiva y ausencia de medios propios, para sostener la información local y su participación pública, durante el periodo 2020-2026?</div></div>
+    <div class="paso-h" id="s7"><div class="tarj ancha"><span class="kicker">Objetivos · 9/15</span><h4>Objetivo general</h4><p>Comprender cómo se comunican e informan, a través de prácticas de comunicación comunitaria, las poblaciones de la ZODES Dique que enfrentan desigualdad conectiva y ausencia de medios propios (2020-2026), como base para diseñar y validar con ellas un atlas web.</p><p><b>1 · Caracterizar</b> la conectividad y los medios registrados en los 13 municipios del Dique, frente a Cartagena y al promedio de Bolívar.</p><p><b>2 · Interpretar</b> cómo circula la información local por prácticas sonoras, digitales e híbridas, y qué la sostiene.</p><p><b>3 · Diseñar y validar</b> con los actores comunitarios un atlas web liviano.</p></div></div>
+    <div class="paso-h" id="s8"><div class="tarj ancha"><span class="kicker">Categorías y variables · 10/15</span><h4>Desigualdad conectiva</h4><p>Accesos fijos por cada 100 habitantes, cobertura 4G, tenencia y uso de TIC en los hogares.</p><h4>Presencia de medios</h4><p>Emisoras registradas por tipo y medios locales no registrados.</p><h4>Prácticas de comunicación comunitaria</h4><p>Medios que intervienen, contenidos que circulan, momentos de uso y combinaciones entre lo sonoro y lo digital.</p><h4>Condiciones del territorio</h4><p>Historia y relación con Cartagena, organización comunitaria, infraestructura y geografía.</p></div></div>
+    <div class="paso-h" id="s9"><div class="tarj ancha"><span class="kicker">Teorías y autores · 11/15</span><h4>Del broadcast al networking, a medias</h4><p>No es una ruptura, sino una transición (Vargas, 2025). En los municipios desconectados, se presume que esa transición está a medias: un audio de WhatsApp termina sonando en el altoparlante, lo que Lévy llama superlenguaje. Allí lo <i>onlife</i> (Floridi, 2015) probablemente llega a ratos.</p><p>La brecha no es solo de acceso (van Dijk, 2020), las redes están atravesadas por relaciones de poder (Castells, 2009) y el desarrollo no equivale a la llegada de tecnología (Gumucio-Dagron, 2001).</p></div></div>
+    <div class="paso-h" id="s10"><div class="tarj "><span class="kicker">Cuatro Bolívar en uno · 12/15</span>Cada punto es un municipio: a la derecha, más internet; arriba, más emisoras. La mediana del departamento es <mark>4,38 accesos</mark> por cada 100 habitantes.</div></div>
+    <div class="paso-h" id="s11"><div class="tarj "><figure class="minimapa"><svg id="miniSR" role="img" aria-label="Ubicación de Santa Rosa en la ZODES Dique"></svg><figcaption><b>Santa Rosa</b> · ZODES Dique · 1,48 accesos por 100 hab. · 0 emisoras · 22.736 habitantes</figcaption></figure><span class="kicker">Las geografías del silencio · 13/15</span><mark>11 municipios</mark> sin conexión y sin medios propios: Córdoba y El Guamo (Montes de María), Achí y San Jacinto del Cauca (Mojana), Cicuco, Hatillo de Loba, San Fernando y Talaigua Nuevo (Mompox), Norosí y Regidor (Loba). Del Dique aparece solo <b>Santa Rosa</b>. Sus otros siete municipios sin emisora no están aquí: en los datos figuran como “conectados”.</div></div>
+    <div class="paso-h" id="s12"><div class="tarj "><span class="kicker">Lo que el mapa todavía no muestra · 14/15</span>En los ocho municipios sin emisora, la radio que suena llega de afuera. Lo propio de cada pueblo circularía por el perifoneo, el voz a voz y los audios de WhatsApp, pero eso no está en ninguna base de datos. Esa es la capa que construirá el trabajo de campo, en cuatro municipios escogidos con el índice de doble exclusión.</div></div>
+    <div class="paso-h" id="s13"><div class="tarj "><span class="kicker">Para cerrar · 15/15</span><b>¿Quién decide hasta dónde llega internet, y quién cuenta lo que pasa donde no llega?</b> Si la emisora y el altoparlante aparecen en el mismo mapa que los datos oficiales, dejan de ser invisibles.</div></div>
+  </div>
+</section>
+
+<script type="application/json" id="datos">{"regiones":[{"cod":"13052","m":"Arjona","z":"Dique","i":4.39,"d":"Conectado con medios","dq":"Dique","s":"Resto de Bolívar","e":2,"p":75429},{"cod":"13062","m":"Arroyohondo","z":"Dique","i":7.36,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":8762},{"cod":"13140","m":"Calamar","z":"Dique","i":4.86,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":24575},{"cod":"13001","m":"Cartagena","z":"Dique","i":19.24,"d":"Conectado con medios","dq":"Cartagena","s":"Resto de Bolívar","e":19,"p":1052015},{"cod":"13222","m":"Clemencia","z":"Dique","i":5.73,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":16081},{"cod":"13433","m":"Mahates","z":"Dique","i":3.18,"d":"Desconectado con medios","dq":"Dique","s":"Resto de Bolívar","e":1,"p":30104},{"cod":"13620","m":"San Cristóbal","z":"Dique","i":5.62,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":8676},{"cod":"13647","m":"San Estanislao","z":"Dique","i":5.13,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":19816},{"cod":"13673","m":"Santa Catalina","z":"Dique","i":0.24,"d":"Desconectado con medios","dq":"Dique","s":"Resto de Bolívar","e":1,"p":15889},{"cod":"13683","m":"Santa Rosa","z":"Dique","i":1.48,"d":"Desconectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":22736},{"cod":"13760","m":"Soplaviento","z":"Dique","i":6.15,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":11585},{"cod":"13836","m":"Turbaco","z":"Dique","i":16.16,"d":"Conectado con medios","dq":"Dique","s":"Resto de Bolívar","e":2,"p":114716},{"cod":"13838","m":"Turbaná","z":"Dique","i":4.37,"d":"Desconectado con medios","dq":"Dique","s":"Resto de Bolívar","e":1,"p":17776},{"cod":"13873","m":"Villanueva","z":"Dique","i":7.23,"d":"Conectado sin medios","dq":"Dique","s":"Geografía del silencio","e":0,"p":25795},{"cod":"13212","m":"Córdoba","z":"Montes de María","i":0.8,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":17408},{"cod":"13244","m":"El Carmen De Bolívar","z":"Montes de María","i":3.15,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":2,"p":75923},{"cod":"13248","m":"El Guamo","z":"Montes de María","i":0.73,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":9404},{"cod":"13442","m":"María La Baja","z":"Montes de María","i":6.19,"d":"Conectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":50463},{"cod":"13654","m":"San Jacinto","z":"Montes de María","i":8.49,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":2,"p":25702},{"cod":"13657","m":"San Juan Nepomuceno","z":"Montes de María","i":1.88,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":40020},{"cod":"13894","m":"Zambrano","z":"Montes de María","i":8.17,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":12795},{"cod":"13006","m":"Achí","z":"Mojana","i":0.68,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":26995},{"cod":"13430","m":"Magangué","z":"Mojana","i":3.68,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":5,"p":145035},{"cod":"13458","m":"Montecristo","z":"Mojana","i":5.71,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":18243},{"cod":"13549","m":"Pinillos","z":"Mojana","i":0.12,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":26467},{"cod":"13655","m":"San Jacinto Del Cauca","z":"Mojana","i":0.09,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":11024},{"cod":"13810","m":"Tiquisio","z":"Mojana","i":3.05,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":19500},{"cod":"13188","m":"Cicuco","z":"Isla de Mompox","i":4.29,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":14652},{"cod":"13300","m":"Hatillo De Loba","z":"Isla de Mompox","i":0.17,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":13176},{"cod":"13440","m":"Margarita","z":"Isla de Mompox","i":0.85,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":11710},{"cod":"13650","m":"San Fernando","z":"Isla de Mompox","i":0.87,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":13725},{"cod":"13468","m":"Santa Cruz De Mompox","z":"Isla de Mompox","i":7.04,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":2,"p":48385},{"cod":"13780","m":"Talaigua Nuevo","z":"Isla de Mompox","i":3.19,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":13906},{"cod":"13030","m":"Altos Del Rosario","z":"Loba","i":6.79,"d":"Conectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":12060},{"cod":"13074","m":"Barranco De Loba","z":"Loba","i":7.39,"d":"Conectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":16181},{"cod":"13268","m":"El Peñón","z":"Loba","i":0.2,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":8060},{"cod":"13490","m":"Norosí","z":"Loba","i":1.65,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":10758},{"cod":"13580","m":"Regidor","z":"Loba","i":1.2,"d":"Desconectado sin medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":0,"p":7502},{"cod":"13600","m":"Río Viejo","z":"Loba","i":8.95,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":11436},{"cod":"13667","m":"San Martín De Loba","z":"Loba","i":4.85,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":2,"p":15943},{"cod":"13042","m":"Arenal","z":"Magdalena Medio","i":7.47,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":3,"p":7937},{"cod":"13160","m":"Cantagallo","z":"Magdalena Medio","i":0.92,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":9019},{"cod":"13473","m":"Morales","z":"Magdalena Medio","i":3.62,"d":"Desconectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":1,"p":24596},{"cod":"13670","m":"San Pablo","z":"Magdalena Medio","i":14.68,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":3,"p":29547},{"cod":"13688","m":"Santa Rosa Del Sur","z":"Magdalena Medio","i":14.0,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":2,"p":35854},{"cod":"13744","m":"Simití","z":"Magdalena Medio","i":8.49,"d":"Conectado con medios","dq":"Resto de Bolívar","s":"Resto de Bolívar","e":3,"p":19902}],"puntos":[{"lat":9.8328,"lon":-75.1034,"m":"San Jacinto","n":"San Jacinto","c":"Inicio","f":""},{"lat":10.4458,"lon":-75.45988,"m":"Cartagena","n":"EMISORA RADIO AUTENTICA - CARTAGENA DE INDIAS","c":"Comercial","f":"1330 kHz"},{"lat":10.4499,"lon":-75.4606,"m":"Cartagena","n":"RADIO PRINCIPE","c":"Comercial","f":"1200 kHz"},{"lat":10.45351,"lon":-75.46269,"m":"Cartagena","n":"ANTENA DOS LA CARIÑOSA","c":"Comercial","f":"1270 kHz"},{"lat":10.45619,"lon":-75.46588,"m":"Cartagena","n":"SISTEMA CARDENAL 1360 AM","c":"Comercial","f":"1360 kHz"},{"lat":10.45762,"lon":-75.4698,"m":"Cartagena","n":"RCN RADIO","c":"Comercial","f":"1000 kHz"},{"lat":10.45762,"lon":-75.47396,"m":"Cartagena","n":"RADIO ESPERANZA","c":"Comercial","f":"1140 kHz"},{"lat":10.45619,"lon":-75.47788,"m":"Cartagena","n":"COLMUNDO CARTAGENA DE INDIAS","c":"Comercial","f":"620 kHz"},{"lat":10.45351,"lon":-75.48107,"m":"Cartagena","n":"RADIO OLIMPICA FM ESTEREO","c":"Comercial","f":"90.5 MHz"},{"lat":10.4499,"lon":-75.48316,"m":"Cartagena","n":"BLU RADIO","c":"Comercial","f":"1090 kHz"},{"lat":10.4458,"lon":-75.48388,"m":"Cartagena","n":"LA MEGA ESTÉREO","c":"Comercial","f":"94.5 MHz"},{"lat":10.44169,"lon":-75.48316,"m":"Cartagena","n":"RUMBA ESTÉREO","c":"Comercial","f":"102.5 MHz"},{"lat":10.43809,"lon":-75.48107,"m":"Cartagena","n":"RADIO TIEMPO DE ORO FM","c":"Comercial","f":"88.5 MHz"},{"lat":10.43541,"lon":-75.47788,"m":"Cartagena","n":"RADIO POLICÍA NACIONAL","c":"Interés público","f":"106 MHz"},{"lat":10.43398,"lon":-75.47396,"m":"Cartagena","n":"REINA FM ESTEREO","c":"Comercial","f":"95.5 MHz"},{"lat":10.43398,"lon":-75.4698,"m":"Cartagena","n":"EMISORA MINUTO DE DIOS","c":"Comercial","f":"89.5 MHz"},{"lat":10.43541,"lon":-75.46588,"m":"Cartagena","n":"UDEC RADIO 99.5 FM","c":"Interés público","f":"99.5 MHz"},{"lat":10.43809,"lon":-75.46269,"m":"Cartagena","n":"RADIÓNICA FM","c":"Interés público","f":"91.1 MHz"},{"lat":10.44169,"lon":-75.4606,"m":"Cartagena","n":"COLECTIVA 101.6","c":"Comunitaria","f":"101.6 MHz"},{"lat":8.31887,"lon":-74.17218,"m":"Arenal","n":"ARENAL ESTEREO","c":"Comunitaria","f":"91 MHz"},{"lat":8.32926,"lon":-74.19018,"m":"Arenal","n":"EMISORA ALCALDIA DE ARENAL","c":"Interés público","f":"107.3 MHz"},{"lat":8.30848,"lon":-74.19018,"m":"Arenal","n":"LA LIDERESA","c":"Comunitaria","f":"107.7 MHz"},{"lat":10.22207,"lon":-75.32132,"m":"Arjona","n":"TROPICANA","c":"Comercial","f":"97.5 MHz"},{"lat":10.22207,"lon":-75.34532,"m":"Arjona","n":"ARJONA STEREO","c":"Comunitaria","f":"100.5 MHz"},{"lat":7.19591,"lon":-74.1445,"m":"Cantagallo","n":"EMISORA COMUNITARIA EN CANTAGALLO","c":"Comunitaria","f":"91 MHz"},{"lat":9.6984,"lon":-75.1534,"m":"El Carmen De Bolívar","n":"CARMEN FM STEREO 89.0 MHZ","c":"Comunitaria","f":"89 MHz"},{"lat":9.6984,"lon":-75.1774,"m":"El Carmen De Bolívar","n":"MARINA STEREO","c":"Interés público","f":"91.7 MHz"},{"lat":8.89274,"lon":-73.90796,"m":"El Peñón","n":"EMISORA COMUNITARIA EN EL PEÑON","c":"Comunitaria","f":"91 MHz"},{"lat":9.15303,"lon":-74.78869,"m":"Magangué","n":"CARACOL RADIO","c":"Comercial","f":"960 kHz"},{"lat":9.16444,"lon":-74.79699,"m":"Magangué","n":"CHEVERISIMA STEREO","c":"Comunitaria","f":"93 MHz"},{"lat":9.16009,"lon":-74.8104,"m":"Magangué","n":"MARINA STEREO","c":"Interés público","f":"102.5 MHz"},{"lat":9.14598,"lon":-74.8104,"m":"Magangué","n":"EMISORA COMUNITARIA DE MAGANGUÉ","c":"Comunitaria","f":"101.8 MHz"},{"lat":9.14162,"lon":-74.79699,"m":"Magangué","n":"EMISORA MOVIMIENTO ARTÍSTICO COMUNAL MARCO","c":"Comunitaria","f":"93,7 MHz"},{"lat":10.21836,"lon":-75.16388,"m":"Mahates","n":"MARINA STEREO","c":"Interés público","f":"101.9 MHz"},{"lat":9.06503,"lon":-74.216,"m":"Margarita","n":"EMISORA COMUNITARIA EN MARGARITA","c":"Comunitaria","f":"89 MHz"},{"lat":7.92224,"lon":-74.41573,"m":"Montecristo","n":"MONTECRISTO STEREO","c":"Comunitaria","f":"91 MHz"},{"lat":9.15303,"lon":-74.54824,"m":"Santa Cruz De Mompox","n":"GALAXIA STEREO","c":"Comunitaria","f":"93 MHz"},{"lat":9.15303,"lon":-74.57224,"m":"Santa Cruz De Mompox","n":"MANANTIAL DE VIDA ETERNA MOMPOX","c":"Comercial","f":"90.5 MHz"},{"lat":8.22467,"lon":-73.99211,"m":"Morales","n":"EMISORA COMUNITARIA EN MORALES","c":"Comunitaria","f":"107 MHz"},{"lat":8.8506,"lon":-74.37422,"m":"Pinillos","n":"LA CRECIENTE FM","c":"Comunitaria","f":"89 MHz"},{"lat":8.4298,"lon":-73.78801,"m":"Río Viejo","n":"LA TAMBORA ESTEREO","c":"Comunitaria","f":"89 MHz"},{"lat":9.82978,"lon":-75.07104,"m":"San Jacinto","n":"EMISORAS DE LA RECONCILIACIÓN","c":"Interés público","f":"102.7 MHz"},{"lat":9.82978,"lon":-75.09504,"m":"San Jacinto","n":"EMISORA COMUNITARIA EN SAN JACINTO","c":"Comunitaria","f":"100.5 MHz"},{"lat":10.00021,"lon":-75.12403,"m":"San Juan Nepomuceno","n":"EMISORA COMUNITARIA EN SAN JUAN NEPOMUCENO","c":"Comunitaria","f":"107 MHz"},{"lat":8.83077,"lon":-73.99749,"m":"San Martín De Loba","n":"LOBANA STEREO","c":"Comunitaria","f":"96.8 MHz"},{"lat":8.83077,"lon":-74.02149,"m":"San Martín De Loba","n":"EMISORA COMUNITARIA DE SAN MARTÍN DE LOBA","c":"Comunitaria","f":"105.7 MHz"},{"lat":7.36014,"lon":-74.23792,"m":"San Pablo","n":"TABACURU STEREO","c":"Comunitaria","f":"107 MHz"},{"lat":7.37053,"lon":-74.25592,"m":"San Pablo","n":"SAN PABLO STEREO","c":"Interés público","f":"94.5 MHz"},{"lat":7.34975,"lon":-74.25592,"m":"San Pablo","n":"EMISORA COMUNITARIA DE SAN PABLO","c":"Comunitaria","f":"106.4 MHz"},{"lat":10.65527,"lon":-75.2805,"m":"Santa Catalina","n":"EMISORA COMUNITARIA EN SANTA CATALINA","c":"Comunitaria","f":"107.9 MHz"},{"lat":7.75367,"lon":-74.28181,"m":"Santa Rosa Del Sur","n":"ASOC. PRODESARROLLO INTEGRAL DE SANTA ROSA DEL SUR","c":"Comunitaria","f":"100.5 MHz"},{"lat":7.75367,"lon":-74.30581,"m":"Santa Rosa Del Sur","n":"LA VOZ DE SANTA ROSA","c":"Interés público","f":"90 MHz"},{"lat":7.86956,"lon":-73.92176,"m":"Simití","n":"SIMITI ORIGINAL STEREO","c":"Comunitaria","f":"89 MHz"},{"lat":7.87995,"lon":-73.93976,"m":"Simití","n":"EMISORA SIMITI STEREO","c":"Interés público","f":"100 MHz"},{"lat":7.85917,"lon":-73.93976,"m":"Simití","n":"MANANTIAL DE VIDA ETERNA SIMITI","c":"Comercial","f":"92.5 MHz"},{"lat":8.46946,"lon":-74.30724,"m":"Tiquisio","n":"TIQUISIO NUEVO F.M. ESTEREO","c":"Comunitaria","f":"91 MHz"},{"lat":10.3485,"lon":-75.3656,"m":"Turbaco","n":"W RADIO","c":"Comercial","f":"107.5 MHz"},{"lat":10.3485,"lon":-75.3896,"m":"Turbaco","n":"TURBACO ESTEREO 89.0 FM","c":"Comunitaria","f":"89 MHz"},{"lat":10.19543,"lon":-75.46791,"m":"Turbaná","n":"YURBANÁ RADIO","c":"Comunitaria","f":"96.8 MHz"},{"lat":9.76347,"lon":-74.87979,"m":"Zambrano","n":"EMISORA COMUNITARIA DE  ZAMBRANO","c":"Comunitaria","f":"107 MHz"}],"geo":{"type":"FeatureCollection","features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.341878,10.614366],[-75.371257,10.542477],[-75.40431,10.509011],[-75.422672,10.402417],[-75.476534,10.363993],[-75.442258,10.310696],[-75.49,10.215257],[-75.53407,10.175594],[-75.562225,10.269794],[-75.503466,10.300781],[-75.513259,10.382586],[-75.55488,10.423488],[-75.502242,10.468109],[-75.512035,10.572224],[-75.39574,10.681298],[-75.294136,10.703608],[-75.341878,10.614366]]]},"properties":{"cod":"13001"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.469058,8.824572],[-74.37235,8.739049],[-74.374798,8.664681],[-74.346643,8.580397],[-74.35766,8.494874],[-74.518024,8.367208],[-74.569438,8.509747],[-74.563318,8.571721],[-74.608611,8.730373],[-74.564542,8.836967],[-74.469058,8.824572]]]},"properties":{"cod":"13006"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.17771,8.656005],[-74.211986,8.649807],[-74.282987,8.708062],[-74.301349,8.817136],[-74.240142,8.798544],[-74.114054,8.839446],[-74.079778,8.778712],[-74.17771,8.656005]]]},"properties":{"cod":"13030"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.880241,8.471324],[-73.876569,8.396955],[-73.957363,8.38704],[-74.153227,8.308953],[-74.285435,8.154019],[-74.331953,8.188725],[-74.32216,8.234585],[-74.230348,8.328785],[-74.131192,8.396955],[-73.951242,8.486197],[-73.880241,8.471324]]]},"properties":{"cod":"13042"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.296584,10.334246],[-75.235377,10.277231],[-75.28067,10.16072],[-75.283119,10.086352],[-75.36024,10.090071],[-75.438586,10.016942],[-75.487552,10.036774],[-75.545087,10.046689],[-75.497345,10.145847],[-75.436137,10.171876],[-75.383499,10.272273],[-75.296584,10.334246]]]},"properties":{"cod":"13052"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.072565,10.16072],[-75.066444,10.275991],[-75.001564,10.323091],[-74.961167,10.289625],[-74.959943,10.211539],[-75.032168,10.204102],[-75.072565,10.16072]]]},"properties":{"cod":"13062"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.071209,8.948519],[-74.051622,8.735331],[-74.138537,8.654765],[-74.17771,8.656005],[-74.079778,8.778712],[-74.114054,8.839446],[-74.240142,8.798544],[-74.301349,8.817136],[-74.225452,8.94728],[-74.071209,8.948519]]]},"properties":{"cod":"13074"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.937908,10.289625],[-74.910977,10.253681],[-74.945253,10.128494],[-75.029719,10.111142],[-75.08603,10.118579],[-75.072565,10.16072],[-75.032168,10.204102],[-74.959943,10.211539],[-74.961167,10.289625],[-75.001564,10.323091],[-75.066444,10.275991],[-75.083582,10.280949],[-75.070116,10.344162],[-75.023598,10.363993],[-74.937908,10.289625]]]},"properties":{"cod":"13140"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.915741,7.295067],[-74.243814,7.003792],[-74.284211,7.00875],[-74.234021,7.099231],[-74.232797,7.161204],[-74.290332,7.230615],[-74.175262,7.291349],[-74.089571,7.384309],[-74.032036,7.371914],[-73.951242,7.430169],[-73.894931,7.430169],[-73.915741,7.295067]]]},"properties":{"cod":"13160"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.650232,9.191455],[-74.724906,9.179061],[-74.733475,9.263345],[-74.678388,9.305487],[-74.628198,9.283176],[-74.650232,9.191455]]]},"properties":{"cod":"13188"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.961167,9.681046],[-74.79101,9.652538],[-74.772647,9.604199],[-74.8057,9.55338],[-74.777544,9.50752],[-74.800803,9.441828],[-74.921994,9.388531],[-74.959943,9.434391],[-75.03584,9.474054],[-75.012581,9.528591],[-74.961167,9.681046]]]},"properties":{"cod":"13212"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.247618,10.505293],[-75.308826,10.521406],[-75.371257,10.542477],[-75.341878,10.614366],[-75.247618,10.505293]]]},"properties":{"cod":"13222"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.951374,9.766569],[-74.961167,9.681046],[-75.012581,9.528591],[-75.077461,9.532309],[-75.132548,9.595522],[-75.279446,9.686004],[-75.327188,9.616593],[-75.373706,9.628988],[-75.371257,9.710793],[-75.338205,9.828543],[-75.319843,9.876882],[-75.237825,9.862008],[-75.234153,9.782682],[-75.110513,9.759132],[-75.022374,9.786401],[-74.951374,9.766569]]]},"properties":{"cod":"13244"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.825286,10.059084],[-74.789786,10.013224],[-74.86201,9.943813],[-74.902407,9.977279],[-74.977081,9.962405],[-75.059099,10.023139],[-75.029719,10.111142],[-74.945253,10.128494],[-74.825286,10.059084]]]},"properties":{"cod":"13248"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.868,8.936125],[-73.817809,8.835728],[-73.872896,8.792346],[-73.875344,8.722936],[-73.923086,8.727894],[-73.965932,8.812178],[-73.951242,8.849362],[-73.987966,8.936125],[-73.978173,8.984464],[-73.868,8.936125]]]},"properties":{"cod":"13268"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.172945,10.285907],[-75.083582,10.280949],[-75.066444,10.275991],[-75.072565,10.16072],[-75.08603,10.118579],[-75.133772,10.108663],[-75.204773,10.039252],[-75.283119,10.086352],[-75.28067,10.16072],[-75.235377,10.277231],[-75.172945,10.285907]]]},"properties":{"cod":"13433"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.175262,9.088579],[-74.100588,9.019169],[-74.193624,8.986943],[-74.226676,8.948519],[-74.27809,8.972069],[-74.2634,8.991901],[-74.264625,9.04148],[-74.323384,9.120806],[-74.297677,9.176582],[-74.248711,9.164187],[-74.175262,9.088579]]]},"properties":{"cod":"13440"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.283119,10.086352],[-75.204773,10.039252],[-75.24517,9.935137],[-75.235377,9.899192],[-75.319843,9.876882],[-75.338205,9.828543],[-75.393292,9.8806],[-75.466741,9.909108],[-75.487552,10.036774],[-75.438586,10.016942],[-75.36024,10.090071],[-75.283119,10.086352]]]},"properties":{"cod":"13442"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.341746,8.276727],[-74.331953,8.188725],[-74.285435,8.154019],[-74.260952,8.104441],[-74.282987,8.044946],[-74.259728,7.94331],[-74.345419,7.897449],[-74.379695,7.795813],[-74.45192,7.787136],[-74.447023,7.68426],[-74.46661,7.580145],[-74.563318,7.432648],[-74.560869,7.645837],[-74.508231,7.723924],[-74.519248,7.901168],[-74.560869,7.968099],[-74.614732,8.031312],[-74.683284,8.188725],[-74.660026,8.227148],[-74.525369,8.275487],[-74.518024,8.367208],[-74.443351,8.429182],[-74.429885,8.341179],[-74.341746,8.276727]]]},"properties":{"cod":"13458"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.417644,9.236076],[-74.353988,9.186497],[-74.480075,9.078664],[-74.606163,9.020409],[-74.68206,9.067508],[-74.729802,9.127003],[-74.724906,9.179061],[-74.650232,9.191455],[-74.530265,9.242274],[-74.439678,9.2745],[-74.417644,9.236076]]]},"properties":{"cod":"13468"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.749257,8.405632],[-73.750481,8.274248],[-73.771292,8.154019],[-73.774964,8.145343],[-73.868,8.063538],[-73.923086,8.145343],[-74.023467,8.17509],[-74.092019,8.162696],[-74.172813,8.108159],[-74.260952,8.104441],[-74.285435,8.154019],[-74.153227,8.308953],[-73.957363,8.38704],[-73.876569,8.396955],[-73.880241,8.471324],[-73.805568,8.411829],[-73.749257,8.405632]]]},"properties":{"cod":"13473"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.25728,8.383321],[-74.256056,8.444055],[-74.158123,8.520902],[-74.152003,8.603947],[-74.126296,8.61882],[-73.99776,8.595271],[-73.979397,8.533297],[-74.06264,8.447774],[-74.087123,8.466366],[-74.188727,8.383321],[-74.25728,8.383321]]]},"properties":{"cod":"13490"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.432333,9.009253],[-74.363781,8.973309],[-74.27809,8.972069],[-74.225452,8.94728],[-74.301349,8.817136],[-74.282987,8.708062],[-74.211986,8.649807],[-74.374798,8.664681],[-74.37235,8.739049],[-74.469058,8.824572],[-74.464161,8.87663],[-74.535162,8.995619],[-74.606163,9.020409],[-74.480075,9.078664],[-74.432333,9.009253]]]},"properties":{"cod":"13549"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.817809,8.835728],[-73.789654,8.751444],[-73.820258,8.662202],[-73.956138,8.664681],[-73.875344,8.722936],[-73.872896,8.792346],[-73.817809,8.835728]]]},"properties":{"cod":"13580"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.956138,8.664681],[-73.820258,8.662202],[-73.746809,8.449013],[-73.749257,8.405632],[-73.805568,8.411829],[-73.880241,8.471324],[-73.951242,8.486197],[-74.131192,8.396955],[-74.230348,8.328785],[-74.32216,8.234585],[-74.331953,8.188725],[-74.341746,8.276727],[-74.25728,8.383321],[-74.188727,8.383321],[-74.087123,8.466366],[-74.06264,8.447774],[-73.979397,8.533297],[-73.99776,8.595271],[-74.126296,8.61882],[-74.152003,8.603947],[-74.138537,8.654765],[-73.956138,8.664681]]]},"properties":{"cod":"13600"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.073789,10.409854],[-75.033392,10.368951],[-75.023598,10.363993],[-75.070116,10.344162],[-75.089703,10.411093],[-75.073789,10.409854]]]},"properties":{"cod":"13620"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.128875,10.397459],[-75.172945,10.285907],[-75.235377,10.277231],[-75.296584,10.334246],[-75.250066,10.421009],[-75.176617,10.455714],[-75.128875,10.397459]]]},"properties":{"cod":"13647"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.940356,9.863248],[-74.919546,9.797556],[-74.951374,9.766569],[-75.022374,9.786401],[-75.110513,9.759132],[-75.234153,9.782682],[-75.237825,9.862008],[-75.319843,9.876882],[-75.235377,9.899192],[-75.127651,9.914066],[-75.099496,9.8806],[-74.940356,9.863248]]]},"properties":{"cod":"13654"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.518024,8.367208],[-74.525369,8.275487],[-74.660026,8.227148],[-74.683284,8.188725],[-74.614732,8.031312],[-74.630646,8.054862],[-74.784889,8.131709],[-74.830183,8.19988],[-74.781217,8.277966],[-74.649008,8.313911],[-74.538835,8.427942],[-74.518024,8.367208]]]},"properties":{"cod":"13655"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.029719,10.111142],[-75.059099,10.023139],[-74.977081,9.962405],[-74.902407,9.977279],[-74.86201,9.943813],[-74.882821,9.871924],[-74.940356,9.863248],[-75.099496,9.8806],[-75.127651,9.914066],[-75.235377,9.899192],[-75.24517,9.935137],[-75.204773,10.039252],[-75.133772,10.108663],[-75.08603,10.118579],[-75.029719,10.111142]]]},"properties":{"cod":"13657"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.875344,8.722936],[-73.956138,8.664681],[-74.138537,8.654765],[-74.051622,8.735331],[-74.071209,8.948519],[-73.978173,8.984464],[-73.987966,8.936125],[-73.951242,8.849362],[-73.965932,8.812178],[-73.923086,8.727894],[-73.875344,8.722936]]]},"properties":{"cod":"13667"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.815361,7.691697],[-73.845965,7.541721],[-73.916966,7.472311],[-73.894931,7.430169],[-73.951242,7.430169],[-74.032036,7.371914],[-74.089571,7.384309],[-74.175262,7.291349],[-74.290332,7.230615],[-74.232797,7.161204],[-74.234021,7.099231],[-74.284211,7.00875],[-74.355212,7.009989],[-74.351539,7.081878],[-74.410299,7.202107],[-74.388264,7.266559],[-74.398057,7.348364],[-74.319711,7.440085],[-74.35766,7.472311],[-74.309918,7.453719],[-74.152003,7.572708],[-74.128744,7.642119],[-74.028363,7.683021],[-73.973277,7.675584],[-73.877793,7.723924],[-73.815361,7.691697]]]},"properties":{"cod":"13670"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.224359,10.795329],[-75.247618,10.696171],[-75.225583,10.55983],[-75.241497,10.504054],[-75.247618,10.505293],[-75.341878,10.614366],[-75.294136,10.703608],[-75.262308,10.800287],[-75.224359,10.795329]]]},"properties":{"cod":"13673"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.308826,10.521406],[-75.292912,10.471827],[-75.335757,10.414812],[-75.422672,10.402417],[-75.40431,10.509011],[-75.371257,10.542477],[-75.308826,10.521406]]]},"properties":{"cod":"13683"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.023467,8.17509],[-74.050398,8.10568],[-73.979397,8.03503],[-74.00388,7.917281],[-74.094468,7.821842],[-74.134865,7.819363],[-74.138537,7.720205],[-74.211986,7.701613],[-74.221779,7.585103],[-74.152003,7.572708],[-74.309918,7.453719],[-74.35766,7.472311],[-74.412747,7.459917],[-74.413971,7.399183],[-74.491093,7.343406],[-74.563318,7.432648],[-74.46661,7.580145],[-74.447023,7.68426],[-74.45192,7.787136],[-74.379695,7.795813],[-74.345419,7.897449],[-74.259728,7.94331],[-74.282987,8.044946],[-74.260952,8.104441],[-74.172813,8.108159],[-74.092019,8.162696],[-74.023467,8.17509]]]},"properties":{"cod":"13688"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-73.868,8.063538],[-73.861879,7.971817],[-73.831275,7.932154],[-73.798223,7.772263],[-73.815361,7.691697],[-73.877793,7.723924],[-73.973277,7.675584],[-74.028363,7.683021],[-74.128744,7.642119],[-74.152003,7.572708],[-74.221779,7.585103],[-74.211986,7.701613],[-74.138537,7.720205],[-74.134865,7.819363],[-74.094468,7.821842],[-74.00388,7.917281],[-73.979397,8.03503],[-74.050398,8.10568],[-74.023467,8.17509],[-73.923086,8.145343],[-73.868,8.063538]]]},"properties":{"cod":"13744"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.070116,10.344162],[-75.083582,10.280949],[-75.172945,10.285907],[-75.128875,10.397459],[-75.089703,10.411093],[-75.070116,10.344162]]]},"properties":{"cod":"13760"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.656353,9.383573],[-74.564542,9.311684],[-74.53149,9.255908],[-74.530265,9.242274],[-74.650232,9.191455],[-74.628198,9.283176],[-74.678388,9.305487],[-74.743268,9.366221],[-74.739595,9.425715],[-74.656353,9.383573]]]},"properties":{"cod":"13780"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.211986,8.649807],[-74.17771,8.656005],[-74.138537,8.654765],[-74.152003,8.603947],[-74.158123,8.520902],[-74.256056,8.444055],[-74.25728,8.383321],[-74.341746,8.276727],[-74.429885,8.341179],[-74.443351,8.429182],[-74.35766,8.494874],[-74.346643,8.580397],[-74.374798,8.664681],[-74.211986,8.649807]]]},"properties":{"cod":"13810"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.335757,10.414812],[-75.28067,10.362754],[-75.296584,10.334246],[-75.383499,10.272273],[-75.442258,10.310696],[-75.476534,10.363993],[-75.422672,10.402417],[-75.335757,10.414812]]]},"properties":{"cod":"13836"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.442258,10.310696],[-75.383499,10.272273],[-75.436137,10.171876],[-75.497345,10.145847],[-75.573242,10.086352],[-75.53407,10.175594],[-75.49,10.215257],[-75.442258,10.310696]]]},"properties":{"cod":"13838"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-75.308826,10.521406],[-75.241497,10.504054],[-75.176617,10.455714],[-75.250066,10.421009],[-75.28067,10.362754],[-75.335757,10.414812],[-75.292912,10.471827],[-75.308826,10.521406]]]},"properties":{"cod":"13873"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.882821,9.871924],[-74.8057,9.760372],[-74.79101,9.652538],[-74.961167,9.681046],[-74.951374,9.766569],[-74.919546,9.797556],[-74.940356,9.863248],[-74.882821,9.871924]]]},"properties":{"cod":"13894"}},{"type":"Feature","geometry":{"type":"MultiPolygon","coordinates":[[[[-73.978173,8.984464],[-74.071209,8.948519],[-74.226676,8.948519],[-74.193624,8.986943],[-74.100588,9.019169],[-74.00388,9.030324],[-73.978173,8.984464]]],[[[-74.2634,8.991901],[-74.27809,8.972069],[-74.363781,8.973309],[-74.432333,9.009253],[-74.2634,8.991901]]]]},"properties":{"cod":"13300"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.300125,9.20385],[-74.297677,9.176582],[-74.323384,9.120806],[-74.264625,9.04148],[-74.2634,8.991901],[-74.432333,9.009253],[-74.480075,9.078664],[-74.353988,9.186497],[-74.391936,9.215005],[-74.300125,9.20385]]]},"properties":{"cod":"13650"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-74.739595,9.425715],[-74.743268,9.366221],[-74.678388,9.305487],[-74.733475,9.263345],[-74.724906,9.179061],[-74.729802,9.127003],[-74.68206,9.067508],[-74.606163,9.020409],[-74.535162,8.995619],[-74.464161,8.87663],[-74.469058,8.824572],[-74.564542,8.836967],[-74.639215,8.977027],[-74.775096,9.037761],[-74.843648,9.107171],[-74.908528,9.20509],[-74.94158,9.291852],[-74.921994,9.388531],[-74.800803,9.441828],[-74.739595,9.425715]]]},"properties":{"cod":"13430"}}]}}</script>
+<script src="assets/d3.min.js"></script>
+<script>
+(function(){
+  const D = JSON.parse(document.getElementById('datos').textContent);
+  const IDS = ["s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13"];
+  const R = new Map(D.regiones.map(r => [r.cod, r]));
+  const COL = {
+    doble: {'Conectado con medios':'#FFD100','Conectado sin medios':'#8A7A2E','Desconectado con medios':'#E07B39','Desconectado sin medios':'#1E1E1E'},
+    dique: {'Dique':'#FFD100','Cartagena':'#8A8A8A','Resto de Bolívar':'#1E1E1E'},
+    silencio: {'Geografía del silencio':'#F2EEE6','Resto de Bolívar':'#1E1E1E'},
+    puntos: {'Comunitaria':'#FFFFFF','Comercial':'#9a958c','Interés público':'#5AA9E6'}
+  };
+  const colDisp = d => d === 'Desconectado sin medios' ? '#e8e5de' : COL.doble[d];
+  const escInternet = d3.scaleLinear().domain([0,10]).range(['#1c1c1c','#FFD100']).clamp(true);
+  const fmt = n => n.toLocaleString('es-CO');
+  const num = n => String(n).replace('.', ',');
+  const movil = () => innerWidth <= 760;
+
+  const esc = document.getElementById('escenario4');
+  const svg = d3.select('#mapa');
+  const g = svg.append('g');
+  const gMun = g.append('g'), gPts = g.append('g'), gEtq = g.append('g');
+  const tip = document.getElementById('tip');
+  const leyenda = document.getElementById('leyenda');
+  const tarjetas = [...document.querySelectorAll('.tarj')];
+  let proy, path, W, H, actual = -1, previo = -1, zoomActual = {k:1,x:0,y:0};
+
+  const mun = gMun.selectAll('path').data(D.geo.features).join('path').attr('class','mun').attr('fill','#1e1e1e')
+    .on('mousemove', (e, f) => { const r = R.get(f.properties.cod); mostrarTip(e, r.m, [['ZODES', r.z], ['Accesos por 100 hab.', num(r.i)], ['Emisoras con sede', r.e], ['Grupo', r.d], ['Población', fmt(r.p)]]); })
+    .on('mouseleave', () => tip.classList.remove('on'));
+  const emisoras = D.puntos.filter(p => p.c !== 'Inicio');
+  const inicio = D.puntos.find(p => p.c === 'Inicio');
+
+  function mostrarTip(e, titulo, filas){
+    const b = esc.getBoundingClientRect();
+    tip.innerHTML = `<h5>${titulo}</h5>` + filas.map(([a,v]) => `<div><span>${a}</span><span>${v}</span></div>`).join('');
+    let x = e.clientX - b.left + 14, y = e.clientY - b.top + 14;
+    if (x + 210 > b.width) x -= 230; if (y + 170 > b.height) y -= 180;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px'; tip.classList.add('on');
+  }
+
+  // área libre para el gráfico: a la derecha de las tarjetas en escritorio
+  const areaGrafico = () => movil() ? [12, 120, W - 12, H * .46] : [Math.max(W * .36, 440), 80, W - 30, H - 70];
+  const areaTenue = () => movil() ? [W * .2, 80, W - 8, H - 10] : [W * .62, 60, W - 20, H - 20];
+
+  function medir(){
+    W = esc.clientWidth; H = esc.clientHeight;
+    svg.attr('viewBox', `0 0 ${W} ${H}`);
+    proy = d3.geoMercator().fitExtent([[0,0],[W,H]], D.geo);
+    path = d3.geoPath(proy);
+    mun.attr('d', path);
+    D.geo.features.forEach(f => { f.c = path.centroid(f); });
+    const ys = D.geo.features.map(f => f.c[1]); const y0 = d3.min(ys), y1 = d3.max(ys);
+    D.geo.features.forEach(f => { f.orden = (f.c[1] - y0) / (y1 - y0); });
+    dibujarPuntos(); dibujarDispersion(); dibujarMini();
+    if (actual >= 0) aplicar(actual, true);
+  }
+
+  function dibujarPuntos(){
+    gPts.selectAll('circle.em').data(emisoras).join('circle').attr('class','em')
+      .attr('cx', p => proy([p.lon, p.lat])[0]).attr('cy', p => proy([p.lon, p.lat])[1]).attr('r', 0)
+      .attr('fill', p => COL.puntos[p.c]).attr('stroke','#111')
+      .on('mousemove', (e, p) => mostrarTip(e, p.n, [['Municipio', p.m], ['Clase', p.c], ['Frecuencia', p.f]]))
+      .on('mouseleave', () => tip.classList.remove('on'));
+    const [ix, iy] = proy([inicio.lon, inicio.lat]);
+    gEtq.selectAll('*').remove();
+    gEtq.append('circle').attr('class','pulso').attr('cx', ix).attr('cy', iy);
+    gEtq.append('circle').attr('class','ini').attr('cx', ix).attr('cy', iy).attr('fill','#FFD100');
+    gEtq.append('line').attr('class','lin').attr('x1', ix).attr('y1', iy).attr('stroke','#aaa').attr('vector-effect','non-scaling-stroke');
+    gEtq.append('text').attr('class','etq').text('San Jacinto');
+    gEtq.style('opacity', 0);
+  }
+
+  function encuadre(cods, area){
+    const feats = cods ? D.geo.features.filter(f => cods.includes(f.properties.cod)) : D.geo.features;
+    const [[x0,y0],[x1,y1]] = path.bounds({type:'FeatureCollection', features:feats});
+    const [ax0, ay0, ax1, ay1] = area;
+    const k = Math.min((ax1 - ax0) / (x1 - x0), (ay1 - ay0) / (y1 - y0));
+    return {k, x: (ax0 + ax1) / 2 - k * (x0 + x1) / 2, y: (ay0 + ay1) / 2 - k * (y0 + y1) / 2};
+  }
+  const DIQUE = D.regiones.filter(r => r.z === 'Dique').map(r => r.cod);
+  const NORTE = D.regiones.filter(r => ['Dique','Montes de María'].includes(r.z)).map(r => r.cod);
+
+  // ----- dispersión -----
+  const dsvg = d3.select('#disp');
+  let dx, dy, dPuntos;
+  function dibujarDispersion(){
+    dsvg.attr('viewBox', `0 0 ${W} ${H}`).selectAll('*').remove();
+    const [ax0, ay0, ax1, ay1] = areaGrafico();
+    const m = {l: ax0 + 50, r: W - ax1 + 10, t: ay0 + 20, b: H - ay1 + 40};
+    dx = d3.scaleLinear().domain([0, 20]).range([m.l, W - m.r]);
+    dy = d3.scaleLinear().domain([0, 20]).range([H - m.b, m.t]);
+    dsvg.append('g').attr('class','eje').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(dx).ticks(movil() ? 5 : 10).tickSizeOuter(0));
+    dsvg.append('g').attr('class','eje').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(dy).ticks(4).tickSizeOuter(0));
+    dsvg.append('text').attr('class','titulo-eje').attr('x', (m.l + W - m.r) / 2).attr('y', H - m.b + 36).attr('text-anchor','middle').text('Accesos a internet fijo por cada 100 hab.');
+    dsvg.append('text').attr('class','titulo-eje').attr('transform', `translate(${m.l - 36},${(m.t + H - m.b) / 2}) rotate(-90)`).attr('text-anchor','middle').text('Emisoras con sede en el municipio');
+    const med = dsvg.append('g').attr('class','mediana');
+    med.append('line').attr('x1', dx(4.38)).attr('x2', dx(4.38)).attr('y1', dy(20)).attr('y2', dy(0));
+    med.append('text').attr('x', dx(4.38) + 6).attr('y', dy(19.3)).text('Mediana de Bolívar: 4,38');
+    dPuntos = dsvg.append('g').selectAll('circle').data(D.regiones).join('circle')
+      .attr('cx', r => dx(r.i)).attr('cy', r => dy(r.e)).attr('r', Math.max(5, Math.min(9, W / 170)))
+      .attr('fill', r => colDisp(r.d)).attr('stroke','#000').attr('stroke-opacity',.35)
+      .on('mousemove', (e, r) => mostrarTip(e, r.m, [['Grupo', r.d], ['Accesos por 100 hab.', num(r.i)], ['Emisoras con sede', r.e], ['ZODES', r.z], ['Población', fmt(r.p)]]))
+      .on('mouseleave', () => tip.classList.remove('on'));
+    const sr = D.regiones.find(r => r.m === 'Santa Rosa');
+    const an = dsvg.append('g').attr('class','etq-sr anot-sr').style('opacity',0);
+    an.append('circle').attr('class','pulso-sr').attr('cx', dx(sr.i)).attr('cy', dy(sr.e));
+    const ax = dx(sr.i) + 70, ay = dy(sr.e) - 90;
+    an.append('line').attr('x1', dx(sr.i) + 8).attr('y1', dy(sr.e) - 10).attr('x2', ax - 4).attr('y2', ay + 8);
+    an.append('text').attr('x', ax).attr('y', ay).text('Santa Rosa (Dique)').style('font-size','14px').style('font-weight',700);
+    an.append('text').attr('x', ax).attr('y', ay + 17).text('1,48 accesos por 100 hab. · 0 emisoras');
+    an.append('text').attr('x', ax).attr('y', ay + 33).text('22.736 habitantes');
+  }
+
+
+  // ----- mini mapa de Santa Rosa (tarjeta "Las geografías del silencio") -----
+  function dibujarMini(){
+    const m = d3.select('#miniSR'); m.selectAll('*').remove();
+    const w = m.node().clientWidth || 340, h = 170;
+    m.attr('viewBox', `0 0 ${w} ${h}`);
+    const feats = D.geo.features.filter(f => R.get(f.properties.cod).z === 'Dique');
+    const pr = d3.geoMercator().fitExtent([[6,6],[w-6,h-6]], {type:'FeatureCollection', features:feats});
+    const pt = d3.geoPath(pr);
+    m.selectAll('path').data(feats).join('path').attr('d', pt)
+      .attr('class', f => { const r = R.get(f.properties.cod); return r.m === 'Santa Rosa' ? 'sr' : (r.m === 'Cartagena' ? 'vec ctg' : 'vec'); });
+    m.select('path.sr').raise();
+    const ctg = feats.find(f => R.get(f.properties.cod).m === 'Cartagena');
+    const c = pt.centroid(ctg); m.append('text').attr('x', c[0] - 8).attr('y', c[1] + 4).attr('text-anchor','end').text('Cartagena');
+    const sr = feats.find(f => R.get(f.properties.cod).m === 'Santa Rosa');
+    const cs = pt.centroid(sr); m.append('text').attr('class','n').attr('x', cs[0] + 16).attr('y', cs[1] - 10).text('Santa Rosa');
+  }
+
+  // ----- leyendas -----
+  const cuadro = (c, t, circ) => `<span><i class="${circ ? 'c' : ''}" style="background:${c}"></i>${t}</span>`;
+  const LEY = {
+    internet: `<span>Accesos a internet fijo por 100 hab.</span><span>0 <i class="grad"></i> 10+</span>`,
+    doble: Object.entries(COL.doble).map(([t,c]) => cuadro(c, t)).join(''),
+    dique: Object.entries(COL.dique).map(([t,c]) => cuadro(c, t)).join(''),
+    silencio: cuadro('#F2EEE6','Geografía del silencio') + cuadro('#1E1E1E','Resto de Bolívar'),
+    disp: Object.keys(COL.doble).map(t => cuadro(colDisp(t), t, true)).join(''),
+    resistencia: Object.entries(COL.doble).map(([t,c]) => cuadro(c, t)).join('') + Object.entries(COL.puntos).map(([t,c]) => cuadro(c, 'Emisora ' + t.toLowerCase(), true)).join('')
+  };
+
+  const relleno = {
+    apagado: () => '#1e1e1e',
+    internet: f => escInternet(R.get(f.properties.cod).i),
+    doble: f => COL.doble[R.get(f.properties.cod).d],
+    dique: f => COL.dique[R.get(f.properties.cod).dq],
+    silencio: f => COL.silencio[R.get(f.properties.cod).s]
+  };
+  // mismo orden y misma forma que la historia de Flourish
+  const ESTADOS = [
+    {capa:'apagado', inicio:true},
+    {capa:'internet', ley:'internet'},
+    {capa:'doble', ley:'doble'},
+    {capa:'dique', ley:'dique', zoomIn:true},
+    {capa:'doble', ley:'doble', zoom:'norte'},
+    {capa:'apagado', tenue:true},
+    {capa:'apagado', tenue:true},
+    {capa:'apagado', tenue:true},
+    {disp:'todos', ley:'disp'},
+    {disp:'silencio', ley:'disp'},
+    {capa:'doble', ley:'resistencia', zoom:'dique', emisoras:true},
+    {capa:'silencio', ley:'silencio', encender:true}
+  ];
+
+  function aplicar(i, sinAnim){
+    previo = actual; actual = i;
+    const st = ESTADOS[i];
+    const T = sinAnim ? 0 : 1;
+    tarjetas.forEach((t, k) => t.classList.toggle('activa', k === i));
+    leyenda.classList.remove('on');
+    setTimeout(() => { leyenda.innerHTML = st.ley ? LEY[st.ley] : ''; if (st.ley) leyenda.classList.add('on'); }, sinAnim ? 0 : 250);
+    document.getElementById('qr').classList.toggle('on', i === ESTADOS.length - 1);
+    tip.classList.remove('on');
+
+    // ---- dispersión ----
+    if (st.disp){
+      dPuntos.filter(r => r.m === 'Santa Rosa').raise();
+      const venDeMapa = !ESTADOS[previo] || !ESTADOS[previo].disp;
+      d3.select('#disp').classed('on', true);
+      svg.style('opacity', 0);
+      if (venDeMapa && !sinAnim){
+        // los puntos salen de su municipio en el mapa y viajan a su lugar en el gráfico
+        dPuntos.interrupt()
+          .attr('cx', r => { const f = D.geo.features.find(f => f.properties.cod === r.cod); return zoomActual.x + zoomActual.k * f.c[0]; })
+          .attr('cy', r => { const f = D.geo.features.find(f => f.properties.cod === r.cod); return zoomActual.y + zoomActual.k * f.c[1]; })
+          .style('opacity', 1)
+          .transition().delay((r, k) => k * 18).duration(1100).ease(d3.easeCubicInOut)
+          .attr('cx', r => dx(r.i)).attr('cy', r => dy(r.e));
+      }
+      const ver = r => st.disp === 'todos' || r.d === 'Desconectado sin medios';
+      dPuntos.transition('f').delay(venDeMapa ? 900 : 0).duration(700 * T)
+        .attr('r', r => ver(r) ? (st.disp === 'silencio' && r.m === 'Santa Rosa' ? 11 : Math.max(5, Math.min(9, W / 170))) : 0)
+        .attr('fill', r => st.disp === 'silencio' && r.m === 'Santa Rosa' ? '#FFD100' : colDisp(r.d))
+        .attr('stroke', r => st.disp === 'silencio' && r.m === 'Santa Rosa' ? '#fff' : '#000').attr('stroke-width', r => st.disp === 'silencio' && r.m === 'Santa Rosa' ? 2 : 1)
+        .style('opacity', r => st.disp === 'silencio' && r.d === 'Desconectado sin medios' && r.m !== 'Santa Rosa' ? .55 : 1)
+        .attr('cx', r => dx(r.i)).attr('cy', r => dy(r.e));
+      dsvg.select('.etq-sr').transition().delay(300).duration(500 * T).style('opacity', st.disp === 'silencio' ? 1 : 0);
+      dsvg.select('.mediana').transition().duration(500 * T).style('opacity', st.disp === 'todos' ? 1 : .25);
+      return;
+    }
+    d3.select('#disp').classed('on', false);
+    svg.style('opacity', st.tenue ? .45 : 1);
+
+    // ---- mapa: el color avanza de norte a sur ----
+    const retraso = f => (sinAnim ? 0 : f.orden * 700);
+    if (st.encender){
+      mun.transition().duration(500 * T).attr('fill', '#141414')
+        .transition().delay(f => R.get(f.properties.cod).s === 'Geografía del silencio' ? (sinAnim ? 0 : 400 + DIQUE.indexOf(f.properties.cod) * 160) : 0)
+        .duration(600 * T).attr('fill', relleno.silencio);
+    } else {
+      mun.transition().delay(retraso).duration(700 * T).attr('fill', relleno[st.capa]);
+    }
+
+    // ---- encuadre ----
+    let z;
+    if (st.tenue) z = encuadre(null, areaTenue());
+    else if (st.zoom === 'norte') z = encuadre(NORTE, areaGrafico());
+    else if (st.zoom === 'dique') z = encuadre(DIQUE, areaGrafico());
+    else z = encuadre(null, areaGrafico());
+    zoomActual = z;
+    g.transition().duration(1200 * T).ease(d3.easeCubicInOut).attr('transform', `translate(${z.x},${z.y}) scale(${z.k})`);
+
+    // ---- emisoras: aparecen una por una ----
+    const rad = 5 / z.k;
+    gPts.selectAll('circle.em').attr('stroke-width', .6 / z.k).style('pointer-events', st.emisoras ? 'auto' : 'none')
+      .transition().delay((p, k) => st.emisoras && !sinAnim ? 900 + k * 22 : 0).duration(400 * T).attr('r', st.emisoras ? rad : 0);
+
+    // ---- San Jacinto ----
+    const [ix, iy] = proy([inicio.lon, inicio.lat]);
+    gEtq.select('.ini').attr('r', 7 / z.k);
+    gEtq.select('.lin').attr('x2', ix + 90 / z.k).attr('y2', iy - 60 / z.k);
+    gEtq.select('.etq').attr('x', ix + 94 / z.k).attr('y', iy - 64 / z.k).style('font-size', (14 / z.k) + 'px').style('stroke-width', (3 / z.k) + 'px');
+    gEtq.select('.pulso').style('transform-box','fill-box');
+    gEtq.transition().delay(st.inicio && !sinAnim ? 600 : 0).duration(500 * T).style('opacity', st.inicio ? 1 : 0);
+  }
+
+  // ----- scroll -----
+  const seccion = document.getElementById('historia');
+  const NOMBRES = ['Todo empezó en San Jacinto','El mapa del silencio','El mapa del silencio','El Dique','La pregunta','Cómo lo haremos','Cómo lo haremos','Cómo lo haremos','Cuatro Bolívar en uno','Cuatro Bolívar en uno','Lo que falta por encender','Lo que falta por encender'];
+  function alScroll(){
+    const r = seccion.getBoundingClientRect();
+    if (r.top > innerHeight * .6 || r.bottom < innerHeight * .4) return;
+    const i = Math.max(0, Math.min(ESTADOS.length - 1, Math.floor((-r.top + innerHeight * .5) / innerHeight)));
+    if (i !== actual) aplicar(i);
+    window.__marcarMenu && window.__marcarMenu(NOMBRES[i]);
+  }
+  window.__irPaso = id => window.scrollTo({top: seccion.offsetTop + IDS.indexOf(id) * innerHeight + 2, behavior: 'smooth'});
+  medir(); aplicar(0, true);
+  addEventListener('resize', medir);
+  addEventListener('scroll', alScroll, {passive:true});
+  alScroll();
+})();
+</script>
+
+<div class="degrade a-claro" aria-hidden="true"><div class="astro"></div><div class="estrellas"></div></div>
+
+<section class="autor" id="autor">
+  <p class="rotulo">Sobre el autor</p>
+  <h3>Juan José Tous Ortega</h3>
+  <p class="bio-corta">Publicaciones en la revista Komunika</p>
+  <div class="trabajos">
+    <a class="trabajo" href="https://komunik.usta.edu.co/index.php/ecovida">
+      <div class="medio">Komunika · Ecovida</div>
+      <h5>Cuando el país arde en febrero</h5>
+      <p>Historia de datos sobre los focos de calor en Colombia, con datos de NASA FIRMS. Visualizaciones: Juan José Tous Ortega. Redacción: Karen Lorena Guayacán Rueda. Diseño: Luisa María García Correa.</p>
+      <span class="ir">Leer en Komunika →</span>
+    </a>
+    <a class="trabajo" id="trabajo-2" href="https://komunik.usta.edu.co/index.php/ecovida">
+      <div class="medio">Komunika · Ecovida</div>
+      <h5>Seis grados de distancia</h5>
+      <p>Cartagena se calienta por dentro. Treinta y cinco años de imágenes de satélite Landsat muestran que la ciudad construida pasó de estar 3,5 °C a 6,2 °C más caliente que sus zonas verdes, y que buena parte de sus colegios queda en medio de ese calor. Por Juan José Tous Ortega.</p>
+      <span class="ir">Leer en Komunika →</span>
+    </a>
+  </div>
+</section>
+
+<div class="degrade a-oscuro corto" aria-hidden="true"><div class="estrellas"></div></div>
+
+<footer class="fuentes">
+  <h4>Fuentes y créditos</h4>
+  <p>Accesos a internet fijo por cada 100 habitantes (2023) y directorio de emisoras: datos abiertos del MinTIC. Población: proyecciones del DANE. La clasificación de doble exclusión usa la mediana de Bolívar (4,38 accesos por cada 100 habitantes).</p>
+  <p>Video de portada: Canal del Dique en su desembocadura a la bahía de Cartagena, dron de Jorge Escobar y Patricio Winckler (2025). Videos de Simití, Morales, Turbaco y Mompox: créditos por confirmar. Música: “Tu presencia”, La Tambora.</p>
+  <p>Versión interactiva en Flourish: <a href="https://public.flourish.studio/story/3860936/" style="color:#FFD100">public.flourish.studio/story/3860936</a>.</p>
+  <p>Geografías del silencio y la resistencia digital · Juan José Tous Ortega · Maestría en Comunicación, Culturas Digitales y Visualización de Datos, Universidad Santo Tomás.</p>
+</footer>
+
+
+
+
+<script>
+(function(){
+  /* ---- Menú ---- */
+  const menu = document.getElementById('menu');
+  const boton = document.getElementById('menuBoton');
+  boton.addEventListener('click', e => {
+    e.stopPropagation();
+    const abierto = menu.classList.toggle('abierto');
+    boton.setAttribute('aria-expanded', abierto);
+  });
+  document.addEventListener('click', () => { menu.classList.remove('abierto'); boton.setAttribute('aria-expanded', false); });
+  document.querySelectorAll('.menu-lista a').forEach(a => a.addEventListener('click', () => menu.classList.remove('abierto')));
+
+  /* ---- Música ---- */
+  const audio = document.getElementById('cancion');
+  const sonido = document.getElementById('sonido');
+  audio.volume = 0.6;
+  sonido.addEventListener('click', async () => {
+    if (audio.paused) {
+      try { await audio.play(); sonido.classList.add('activo'); sonido.setAttribute('aria-pressed', true); sonido.setAttribute('aria-label', 'Silenciar música'); }
+      catch (err) { console.log('El navegador no permitió reproducir el audio', err); }
+    } else {
+      audio.pause(); sonido.classList.remove('activo'); sonido.setAttribute('aria-pressed', false); sonido.setAttribute('aria-label', 'Activar música');
+    }
+  });
+
+  /* ---- Televisor: se apaga la portada y se enciende el resumen ---- */
+  const portada = document.getElementById('introduccion');
+  const pantalla = document.getElementById('pantalla');
+  const pantalla2 = document.getElementById('pantalla2');
+  const punto = document.getElementById('punto');
+  const estatica = document.getElementById('estatica');
+  const barra = document.getElementById('barra');
+  const tarjeta = document.getElementById('tarjeta');
+  const credito2 = document.getElementById('credito2');
+  const clips = [...document.querySelectorAll('.clip')];
+  const menuActual = document.getElementById('menuActual');
+  const enlaces = [...document.querySelectorAll('.menu-lista a')];
+  const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const lim = (v, a, b) => Math.min(b, Math.max(a, v));
+  const tramo = (p, a, b) => lim((p - a) / (b - a), 0, 1);
+  const suave = t => t * t * (3 - 2 * t);
+  const recorrido = () => portada.offsetHeight - window.innerHeight;
+
+  // Saltos del menú dentro de la portada
+  enlaces.forEach(a => {
+    if (a.dataset.p === undefined) return;
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      window.scrollTo({top: portada.offsetTop + recorrido() * parseFloat(a.dataset.p), behavior: 'smooth'});
+    });
+  });
+
+  enlaces.forEach(a => { if (!a.dataset.paso) return; a.addEventListener('click', e => { e.preventDefault(); menu.classList.remove('abierto'); window.__irPaso && window.__irPaso(a.dataset.paso); }); });
+  window.__marcarMenu = n => marcar(n);
+  addEventListener('scroll', () => { const a = document.getElementById('autor'); if (!a) return; const r = a.getBoundingClientRect(); if (r.top < innerHeight * .5) marcar('Sobre el autor'); }, {passive:true});
+  function marcar(nombre){
+    menuActual.textContent = nombre;
+    enlaces.forEach(a => a.classList.toggle('activo', a.textContent.trim().startsWith(nombre)));
+  }
+
+  function actualizar(){
+    const p = lim(-portada.getBoundingClientRect().top / recorrido(), 0, 1);
+
+    if (reducido){
+      pantalla.style.opacity = 1 - tramo(p, .2, .4);
+      pantalla2.style.transform = 'none';
+      pantalla2.style.opacity = tramo(p, .4, .55);
+    } else {
+      // Se apaga la portada
+      const a = suave(tramo(p, .06, .24));   // se aplasta hacia una línea
+      const b = suave(tramo(p, .24, .34));   // la línea se encoge
+      const c = tramo(p, .34, .42);          // el punto se apaga
+      pantalla.style.transform = `scale(${1 - b * 0.995}, ${1 - a * 0.996})`;
+      pantalla.style.filter = `brightness(${1 + a * 2.2}) contrast(${1 + a * 0.6})`;
+      pantalla.style.opacity = b >= 1 ? 0 : 1;
+      punto.style.opacity = b >= 1 ? (1 - c) : 0;
+      punto.style.transform = `scale(${1 - c * 0.8})`;
+
+      // Se enciende el resumen (al revés: punto → línea → imagen)
+      const d = suave(tramo(p, .46, .54));   // la línea se estira
+      const e = suave(tramo(p, .54, .64));   // la imagen se abre
+      pantalla2.style.opacity = d > 0 ? 1 : 0;
+      pantalla2.style.transform = `scale(${0.005 + d * 0.995}, ${0.004 + e * 0.996})`;
+      pantalla2.style.filter = `brightness(${1 + (1 - e) * 2.2})`;
+
+      const ruidoApagado = a > 0 && b < 1 ? Math.sin(a * Math.PI) : 0;
+      const ruidoEncendido = d > 0 && e < 1 ? Math.sin(Math.max(d, e) * Math.PI) : 0;
+      estatica.style.opacity = 0.6 * Math.max(ruidoApagado, ruidoEncendido);
+    }
+
+    // Aparecen la tarjeta y los videos, uno tras otro
+    tarjeta.classList.toggle('visible', p > .66);
+    credito2.classList.toggle('visible', p > .66);
+    clips.forEach((cl, i) => {
+      const ver = p > .70 + i * .05;
+      if (ver !== cl.classList.contains('visible')){
+        cl.classList.toggle('visible', ver);
+        const v = cl.querySelector('video');
+        if (ver) { v.play().catch(()=>{}); } else { v.pause(); }
+      }
+    });
+
+    barra.classList.toggle('oscura', p > .3 && p < .56);
+    if (portada.getBoundingClientRect().bottom > window.innerHeight * .5) marcar(p > .6 ? 'El proyecto en corto' : 'Introducción');
+  }
+  window.addEventListener('scroll', actualizar, {passive:true});
+  window.addEventListener('resize', actualizar);
+  actualizar();
+
+  /* ---- Página 3: muro de titulares y notas por pasos ---- */
+  const titulares = [
+    ['Gobernación de Bolívar · Ene 2026','<i>Bolívar</i> inaugura su primera Colmena Digital en <i>Mompox</i> y lleva educación tecnológica de vanguardia a zonas rurales'],
+    ['Ministerio TIC · Jul 2026','Ministerio TIC fortalece la educación digital en <i>Bolívar</i> con entrega de computadores e inversión de más de $159.340 millones'],
+    ['Gobernación de Bolívar · Jul 2026','Gobernador Yamil Arana y MinTIC entregan en <i>Clemencia</i> 52 computadores y 40 becas en Inteligencia Artificial'],
+    ['Gobernación de Bolívar','Gobernación de <i>Bolívar</i> entregó 296 computadores a escuelas “InnovaTIC”'],
+    ['El Polideportivo · Jul 2026','MinTIC y Gobernación de <i>Bolívar</i> entregan computadores y becas para estudiantes rurales en <i>Clemencia</i>'],
+    ['MinTIC · Nov 2019','La ‘gran ola de conectividad’ llegó al departamento de <i>Bolívar</i> con 35 Zonas Digitales'],
+    ['MinTIC · Jul 2020','MinTIC instalará 4 Zonas Digitales rurales en <i>Bolívar</i>'],
+    ['El Universal · Sep 2020','El reto de la educación en medio de la pandemia'],
+    ['Radio Nacional · Abr 2021','Clases por radio: regresa la apuesta rural a <i>Córdoba, Bolívar</i>'],
+    ['MinTIC · Mar 2022','<i>Bolívar</i> cuenta con 52 Zonas Digitales Urbanas que impulsan la conectividad de sus habitantes'],
+    ['El Universal · Sep 2024','Estos son los 26 colegios que tendrán internet gratis en <i>Cartagena</i>'],
+    ['El Universal · Nov 2024','Gobernación de <i>Bolívar</i> elimina barreras para la transformación digital'],
+    ['MinTIC · Mar 2026','Viceministra de Conectividad lideró agenda en <i>Cartagena</i> para cerrar brechas y acelerar proyectos estratégicos en Bolívar'],
+    ['El Universal · Jul 2026','MinTIC entrega 52 computadores a estudiantes de <i>Clemencia</i> y anuncia nuevas becas en IA']
+  ];
+  const muro = document.getElementById('muro');
+  let html = '';
+  for (let i = 0; i < 90; i++){ const t = titulares[(i * 5) % titulares.length]; html += `<div><b>${t[0]}</b>${t[1]}</div>`; }
+  muro.innerHTML = html;
+
+  const noticias = document.getElementById('noticias');
+  const notas = [...document.querySelectorAll('.nota')];
+  const paso1 = document.getElementById('paso1');
+  const paso2 = document.getElementById('paso2');
+  function actualizarNoticias(){
+    const r = noticias.getBoundingClientRect();
+    const total = noticias.offsetHeight - window.innerHeight;
+    const q = total > 0 ? lim(-r.top / total, 0, 1) : 1;
+    const enVista = r.top < window.innerHeight * .6 && r.bottom > window.innerHeight * .4;
+    const paso = q < .45 ? 1 : 2;
+    notas.forEach((n, i) => {
+      const umbral = n.dataset.paso === '1' ? .02 + (i * .06) : (.5 + (i - 3) * .08);
+      n.classList.toggle('visible', enVista && q >= umbral);
+      n.classList.toggle('atenuada', n.dataset.paso === '1' && paso === 2);
+    });
+    paso1.classList.toggle('oculto', paso !== 1);
+    paso2.classList.toggle('oculto', paso !== 2);
+    if (enVista) marcar('Lo que dicen las noticias');
+  }
+
+  /* ---- anochecer / amanecer: el sol baja o sube y aparecen las estrellas ---- */
+  const degrades = [...document.querySelectorAll('.degrade')];
+  function cielo(){
+    degrades.forEach(d => {
+      const r = d.getBoundingClientRect();
+      const q = lim((innerHeight - r.top) / (innerHeight + r.height), 0, 1);
+      d.classList.toggle('visible', q > .45 && q < 1);
+      const astro = d.querySelector('.astro');
+      if (astro){
+        const baja = d.classList.contains('a-oscuro');
+        const t = baja ? q : 1 - q;
+        astro.style.transform = `translateY(${(t - .3) * 60}vh) scale(${1 - t * .35})`;
+        astro.style.opacity = 1 - lim((t - .35) / .4, 0, 1);
+      }
+    });
+  }
+  addEventListener('scroll', cielo, {passive:true}); cielo();
+  window.addEventListener('scroll', actualizarNoticias, {passive:true});
+  window.addEventListener('resize', actualizarNoticias);
+  actualizarNoticias();
+})();
+</script>
+</body>
+</html>
